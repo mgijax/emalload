@@ -1,0 +1,32 @@
+<TITLE>IMPC Endonuclease-mediated Allele Load</TITLE>
+<H1>>IMPC Endonuclease-mediated Allele Load</H1>
+<UL>
+
+<H3>Inputs</H3>
+<UL>
+<LI><A HREF="/data/loads/mgi/emalload/impc/input/???">IMPC input file</A>
+</UL>
+
+<H3>Outputs</H3>
+<UL>
+<LI><A HREF="/data/loads/mgi/emalload/impc/output/ALL_Allele.bcp">ALL_Allele.bcp</A>
+</UL>
+
+<H3>Diagnostic and Load BCP Files</H3>
+<UL>
+<LI><A HREF="/data/loads/mgi/emalload/impc/logs/impc.diag.log">impc.diag.log</A>
+<LI><A HREF="/data/loads/mgi/emalload/impc/logs/impc.cur.log">impc.cur.log</A>
+</UL>
+
+<H3>Archives</H3>
+<UL>
+<LI><A HREF="/data/loads/mgi/emalload/impc/archive/"><B>Archive</B></A> - Logs, Reports and Output files from previous loads.
+</UL>
+
+<H3>Wiki</H3>
+<UL>
+<LI><A HREF="http://mgiwiki/mediawiki/index.php/sw:emalload"><B>Wiki page</B></A>
+</UL>
+
+</UL>
+

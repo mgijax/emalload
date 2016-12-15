@@ -1,0 +1,94 @@
+#format: sh
+#
+#  emalload.config
+#
+#  This file sets up environment variables that are needed  for the emalload
+#
+###########################################################################
+
+###########################################################################
+#
+#  GENERAL SETTINGS
+#
+###########################################################################
+
+#
+#  If the MGICONFIG environment variable does not have a local override,
+#  use the default "live" settings.
+#
+if [ "${MGICONFIG}" = "" ]
+then
+    MGICONFIG=/usr/local/mgi/live/mgiconfig
+    export MGICONFIG
+fi
+
+. ${MGICONFIG}/master.config.sh
+
+###########################################################################
+#
+#  LOAD SPECIFIC SETTINGS
+#
+###########################################################################
+
+#  Path name of the archive, logs, reports and output directories
+FILEDIR=${DATALOADSOUTPUT}/mgi/emalload/impc
+ARCHIVEDIR=${FILEDIR}/archive
+LOGDIR=${FILEDIR}/logs
+RPTDIR=${FILEDIR}/reports
+OUTPUTDIR=${FILEDIR}/output
+INPUTDIR=${FILEDIR}/input
+
+# input/output
+INFILE_NAME=${DATADOWNLOADS}/???
+
+QCFILE_NAME=${RPTDIR}/emalload_qc.rpt
+
+export FILEDIR ARCHIVEDIR LOGDIR RPTDIR OUTPUTDIR INPUTDIR INFILE_NAME
+export QCFILE_NAME
+
+# BCP file names
+ALLELE_FILENAME=ALL_Allele.bcp
+
+export ALLELE_FILENAME
+
+# Full paths to bcp files
+ALL_ALLELE_BCP=${OUTPUTDIR}/${ALLELE_FILENAME}
+
+export ALL_ALLELE_BCP
+
+#  Complete path name of the log files
+LOG_FILE=${LOGDIR}/emalload.log
+LOG_PROC=${LOGDIR}/emalload.proc.log
+LOG_DIAG=${LOGDIR}/emalload.diag.log
+LOG_CUR=${LOGDIR}/emalload.cur.log
+LOG_VAL=${LOGDIR}/emalload.val.log
+
+export LOG_FILE LOG_PROC LOG_DIAG LOG_CUR LOG_VAL
+
+#  Send debug messages to the diagnostic log (true or false)
+LOG_DEBUG=false
+
+export LOG_DEBUG
+
+#  The name of the job stream for the load
+JOBSTREAM=impc_emalload
+
+export JOBSTREAM
+
+###########################################################################
+#
+#  MISCELLANEOUS SETTINGS
+#
+###########################################################################
+
+#  The name of the load for the subject of an email notification
+MAIL_LOADNAME="IMPC EMAL load"
+
+#  Recipient list for mailing the log files (comma-separated)
+MAIL_LOG_PROC="mgiadmin"
+
+export MAIL_LOADNAME MAIL_LOG_PROC
+
+INSTALLDIR=${EMALLOAD}
+
+export INSTALLDIR
