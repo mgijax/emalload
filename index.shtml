@@ -5,6 +5,7 @@
 <H3>Inputs</H3>
 <UL>
 <LI><A HREF="/data/loads/mgi/emalload/impc/input/???">IMPC input file</A>
+<LI><A HREF="/data/loads/mgi/emalload/impc/input/allele_file.txt
 </UL>
 
 <H3>Outputs</H3>
@@ -12,10 +13,15 @@
 <LI><A HREF="/data/loads/mgi/emalload/impc/output/ALL_Allele.bcp">ALL_Allele.bcp</A>
 </UL>
 
-<H3>Diagnostic and Load BCP Files</H3>
+<H3>Diagnostic and Curation logs</H3>
 <UL>
 <LI><A HREF="/data/loads/mgi/emalload/impc/logs/impc.diag.log">impc.diag.log</A>
 <LI><A HREF="/data/loads/mgi/emalload/impc/logs/impc.cur.log">impc.cur.log</A>
+</UL>
+
+<H3>QC Report</H3>
+<UL>
+<LI><A HREF="/data/loads/mgi/emalload/impc/reports/emalload_qc.rpt">emalload_qc.rpt</A>
 </UL>
 
 <H3>Archives</H3>
