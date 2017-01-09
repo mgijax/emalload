@@ -38,18 +38,26 @@ RPTDIR=${FILEDIR}/reports
 OUTPUTDIR=${FILEDIR}/output
 INPUTDIR=${FILEDIR}/input
 
+export FILEDIR ARCHIVEDIR LOGDIR RPTDIR OUTPUTDIR INPUTDIR 
+
 # input/output
-INFILE_NAME=${DATADOWNLOADS}/???
+#SOURCE_INPUT_FILE=${DATADOWNLOADS}/???
+SOURCE_INPUT_FILE=/mgi/all/wts_projects/12100/12115/prelim_emal_file.txt
+SOURCE_COPY_INPUT_FILE=${INPUTDIR}/crispr_file.txt
+ALLELE_FILE=${OUTPUTDIR}/allele_file.txt
+QC_FILE=${RPTDIR}/emalload_qc.rpt
 
-QCFILE_NAME=${RPTDIR}/emalload_qc.rpt
+export SOURCE_INPUT_FILE SOURCE_COPY_INPUT_FILE ALLELE_FILE QC_FILE
 
-export FILEDIR ARCHIVEDIR LOGDIR RPTDIR OUTPUTDIR INPUTDIR INFILE_NAME
-export QCFILE_NAME
+# the preprocessor to use 
+PREPROCESSOR=makeIMPC.py
+
+export PREPROCESSOR
 
 # BCP file names
-ALLELE_FILENAME=ALL_Allele.bcp
+ALLELE_BCP=ALL_Allele.bcp
 
-export ALLELE_FILENAME
+export ALLELE_BCP
 
 # Full paths to bcp files
 ALL_ALLELE_BCP=${OUTPUTDIR}/${ALLELE_FILENAME}
@@ -65,15 +73,19 @@ LOG_VAL=${LOGDIR}/emalload.val.log
 
 export LOG_FILE LOG_PROC LOG_DIAG LOG_CUR LOG_VAL
 
+# Reference for this load
+JNUMBER=J:237616a
+
+export JNUM
+
+CREATEDBY=impc_emalload
+
+export CREATEDBY
+
 #  Send debug messages to the diagnostic log (true or false)
 LOG_DEBUG=false
 
 export LOG_DEBUG
-
-#  The name of the job stream for the load
-JOBSTREAM=impc_emalload
-
-export JOBSTREAM
 
 ###########################################################################
 #
@@ -83,6 +95,11 @@ export JOBSTREAM
 
 #  The name of the load for the subject of an email notification
 MAIL_LOADNAME="IMPC EMAL load"
+
+#  The name of the job stream for the load
+JOBSTREAM=${CREATEDBY}
+
+export JOBSTREAM 
 
 #  Recipient list for mailing the log files (comma-separated)
 MAIL_LOG_PROC="mgiadmin"
