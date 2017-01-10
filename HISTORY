@@ -1,5 +1,7 @@
-TAG: emalload-6-0-7-
-DATE: 
+TAG: emalload-6-0-9-1
+DATE: 1/10/17
 STAFF: sc
-CHANGES:
+CHANGES: Mice Crispies
+1)makeIMPC.py added, does QC US19 
+2) All guts of load from US31
 
