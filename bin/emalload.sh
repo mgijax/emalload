@@ -50,9 +50,8 @@ fi
 
 CONFIG=$1
 
-echo ${CONFIG}
 .  ${CONFIG}
-echo ${SOURCE_INPUT_FILE}
+
 #
 # Make sure the configuration file exists and source it.
 #
@@ -124,28 +123,23 @@ date >> ${LOG}
 rm -rf ${SOURCE_COPY_INPUT_FILE}
 cp ${SOURCE_INPUT_FILE} ${SOURCE_COPY_INPUT_FILE}
 STAT=$?
-checkStatus ${STAT} "copying IMPC input file"
+checkStatus ${STAT} "Copying input file"
 
 #
-# run pre-processor to create allele input file
+# run pre-processor to do QC and create allele input file
 #
 ${PREPROCESSOR} 2>&1 >> ${LOG}
 STAT=$?
-if [ ${STAT} -ne 0 ]
-then
-checkStatus ${STAT} "pre-processor failed  ${CONFIG}"
-else
-checkStatus ${STAT} "pre-processor ${CONFIG}"
-fi
+checkStatus ${STAT} "${PREPROCESSOR}"
 
 
 # Create alleles
 #
-#echo "" >> ${LOG}
-#date >> ${LOG}
-#./makeAllele.sh ${CONFIG} ${ANNOTCONFIG} 2>&1 >> ${LOG}
-#STAT=$?
-#checkStatus ${STAT} "makeAllele.sh ${CONFIG}"
+echo "" >> ${LOG}
+date >> ${LOG}
+./makeAllele.py  2>&1 >> ${LOG}
+STAT=$?
+checkStatus ${STAT} "makeAllele.py ${CONFIG}"
 
 #
 # Touch the "lastrun" file to note when the load was run.
