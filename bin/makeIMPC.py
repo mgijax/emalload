@@ -1,7 +1,11 @@
 #!/usr/local/bin/python
 #
-    #  makeIMPC.py
 ###########################################################################
+#
+#
+# Program: makeIMPC.py
+#
+# Original Author: sc
 #
 #  Purpose:
 #
@@ -39,19 +43,18 @@
 #	field 1: MGI Marker ID
 #       field 2: Mutation Type
 #       field 3: Allele Description
-#       field 4: Colony Name
-#       field 5: Allele Description
-#       field 6: Colony Name
-#       field 7: Colony Background Strain
-#       field 8: Allele Symbol
-#       field 9: Lab Name
-#       field 10: Inheritance Mode
-#       field 11: Allele Type
-#       field 12: Allele Subtype
-#       field 13: Allele Status
-#       field 14: Transmission State
-#       field 15: Allele Collection
-
+#       field 4: Colony ID
+#       field 5: Strain of Origin
+#       field 6: Allele Symbol
+#       field 7: Allele Name
+#       field 8: Inheritance Mode
+#       field 9: Allele Type
+#       field 10: Allele Subtype
+#       field 11: Allele Status
+#       field 12: Transmission State
+#       field 13: Allele Collection
+#	field 14: J Number
+#	field 15: Created By
 #  Exit Codes:
 #
 #      0:  Successful completion
@@ -84,14 +87,13 @@ CRT = '\n'
 TAB = '\t'
 
 # Values common to all alleles
-inHeritMode = 'Not Specified'
-alleleType = 'Endonuclease-mediated'
-alleleSubType = 'Null/knockout'
-alleleStatus = 'Approved'
-transmissionState = 'Not Specified' # (no ES Cells are used)
-alleleCollection = 'IMPC'
-
 # from config
+inHeritMode = ''
+alleleType = ''
+alleleSubType = ''
+alleleStatus = ''
+transmissionState = '' 
+alleleCollection = ''
 jNumber = ''
 createdBy = ''
 
@@ -129,6 +131,14 @@ emAlleleDict = {}
 # labCode is vocab abbreviation, name is term
 labCodeDict = {}
 
+# marker ID to marker name lookup (for Allele Name construction)
+# {markerID: markerName, ...}
+markerDict = {}
+
+# template for creating allelel name for new alleles
+# marker name, sequenceNum, lab code name
+alleleNameTemplate = '%s; endonuclease-mediated mutation %s, %s'
+
 #
 # QC structures
 #
@@ -140,6 +150,7 @@ alleleSymbolMismatchList = []	# 7.2.2.3b
 noColIdButAlleleMgiIDList = []	# 7.2.3.1
 noColIdButAlleleMatchList = []	# 7.2.3.2
 labCodeNotInMgiList = []	# 7.2.3.3
+markerIdNotInMgiList = []	# new requirement
 
 # convenience object for allele information
 #
@@ -160,10 +171,10 @@ class Allele:
 # Purpose: Initialization
 #
 def initialize():
-    global logDiagFile, logCurFile, qcFile
-    global impcFile, alleleFile, qcFile
-    global jNumber, createdBy
-    global colonyToAlleleDict, emAlleleDict, labCodeDict
+    global logDiagFile, logCurFile, qcFile, impcFile, alleleFile, qcFile
+    global jNumber, createdBy, inHeritMode, alleleType, alleleSubType, alleleStatus
+    global transmissionState, alleleCollection
+    global colonyToAlleleDict, emAlleleDict, labCodeDict, markerDict
 
     logDiagFile = os.getenv('LOG_DIAG')
     logCurFile = os.getenv('LOG_CUR')
@@ -172,10 +183,16 @@ def initialize():
     alleleFile = os.getenv('ALLELE_FILE')
     jNumber = os.getenv('JNUMBER')
     createdBy = os.getenv('CREATEDBY')
+    inHeritMode = os.getenv('INHERIT_MODE')
+    alleleType = os.getenv('ALLELE_TYPE')	
+    alleleSubType = os.getenv('ALLELE_SUBTYPE')
+    alleleStatus = os.getenv('ALLELE_STATUS')
+    transmissionState = os.getenv('TRANSMISSION_STATE')
+    alleleCollection = os.getenv('ALLELE_COLLECTION')
 
     if openFiles() != 0:
 	sys.exit(1)
-    print 'querying for alleles with colony id'
+    #print 'querying for alleles with colony id'
     # Query for IKMC Allele Colony Name - there are multi per allele
     results = db.sql('''select distinct nc.note, a.symbol as alleleSymbol, m.symbol as markerSymbol, a1.accid as alleleID, a2.accid as markerID, a1.preferred as allelePref, a2.preferred as markerPref
 	from MGI_Note n, MGI_NoteChunk nc, ALL_Allele a, MRK_Marker m, ACC_Accession a1, ACC_Accession a2
@@ -244,6 +261,20 @@ def initialize():
 	where _Vocab_key = 71''', 'auto')
     for r in results:
 	labCodeDict[r['abbreviation']] = r['term']
+
+    # Query for markers and create lookup
+    results = db.sql('''select a.accid, m.name
+	from MRK_Marker m, ACC_Accession a
+	where m._Marker_Status_key = 1
+	and m._Marker_Type_key in (1, 7)
+	and m._Marker_key = a._Object_key
+	and a._MGIType_key = 2
+	and a._LogicalDB_key = 1
+	and a.prefixPart = 'MGI:'
+	and a.preferred = 1''', 'auto')
+    for r in results:
+	#print 'markerID: %s' % r['accid']
+	markerDict[r['accid']] = r['name']
 
     return 0
 
@@ -331,7 +362,7 @@ def closeFiles():
 #
 def createAlleleFile():
     global missingRequiredValueList, multiAlleleForCidList, noColIdButAlleleMatchList
-    global noColIdButAlleleMgiIDList, labCodeNotInMgiList
+    global noColIdButAlleleMgiIDList, labCodeNotInMgiList, markerIdNotInMgiList
 
     lineNum = 0
     for line in fpIMPC.readlines():
@@ -448,12 +479,32 @@ def createAlleleFile():
 	if labCode not in labCodeDict:
 	    labCodeNotInMgiList.append('%s%s%s' % (lineNum, TAB, line))
 	    hasError = 1
-	else:
-	    labName = labCodeDict[labCode]
+
+	# new requirement marker ID must be in the database as a preferred
+	# Gene or Pseudogene ID
+	if markerID not in markerDict:
+	    markerIdNotInMgiList.append('%s%s%s' % (lineNum, TAB, line))
+	    hasError = 1
+	#
 	# If no errors write out to allele file
+	#
 	if hasError == 0:
+	    # calculate the allele name
+	    # get the marker name
+	    markerName = markerDict[markerID]
+	    #print 'markerName: %s' % markerName
+	    # get the sequencNum from the allele
+	    seqNumFinder = re.compile ( '<em(.*)\(' )
+	    match = seqNumFinder.search(alleleSymbol)
+	    sequenceNum = match.group(1)
+	    #print 'alleleSymbol: %s' % alleleSymbol
+	    # get the lab name from the lab code
+	    labName = labCodeDict[labCode]
+
+	    alleleName = alleleNameTemplate % (markerName, sequenceNum, labName)
+	    #print 'alleleName: %s' % alleleName
 	    #print 'no errors'
-	    fpAllele.write('%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s' % (markerID, TAB, mutationType, TAB, alleleDescription, TAB, colonyID, TAB, strain, TAB, alleleSymbol, TAB, labName, TAB, inHeritMode, TAB, alleleType, TAB, alleleSubType, TAB, alleleStatus, TAB, transmissionState, TAB, alleleCollection, TAB, jNumber, TAB, createdBy, CRT))
+	    fpAllele.write('%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s' % (markerID, TAB, mutationType, TAB, alleleDescription, TAB, colonyID, TAB, strain, TAB, alleleSymbol, TAB, alleleName, TAB, inHeritMode, TAB, alleleType, TAB, alleleSubType, TAB, alleleStatus, TAB, transmissionState, TAB, alleleCollection, TAB, jNumber, TAB, createdBy, CRT))
 
     return 0
 
@@ -521,6 +572,14 @@ def writeQCReport():
     if len(labCodeNotInMgiList):
 	fpQC.write(string.join(labCodeNotInMgiList, CRT))
     fpQC.write('Total: %s' % len(labCodeNotInMgiList))
+
+    # Requirement New
+    fpQC.write('%s%s Colony ID does not match IKMC Allele Colony ID Note, Marker ID not in MGI%s%s' % (CRT, CRT, CRT, CRT))
+    fpQC.write('Line#%sInput Line%s' % (TAB, CRT))
+    fpQC.write('_____________________________________________________________%s' % CRT)
+    if len(markerIdNotInMgiList):
+	 fpQC.write(string.join(markerIdNotInMgiList))
+    fpQC.write('Total: %s' % len(markerIdNotInMgiList))
 
     return 0
 
