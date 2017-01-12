@@ -42,7 +42,8 @@ export FILEDIR ARCHIVEDIR LOGDIR RPTDIR OUTPUTDIR INPUTDIR
 
 # input/output
 #SOURCE_INPUT_FILE=${DATADOWNLOADS}/???
-SOURCE_INPUT_FILE=/mgi/all/wts_projects/12100/12115/prelim_emal_file.txt
+#SOURCE_INPUT_FILE=/mgi/all/wts_projects/12100/12115/prelim_emal_file.txt
+SOURCE_INPUT_FILE=${INPUTDIR}/emal_sample_input.txt
 SOURCE_COPY_INPUT_FILE=${INPUTDIR}/crispr_file.txt
 ALLELE_FILE=${OUTPUTDIR}/allele_file.txt
 QC_FILE=${RPTDIR}/emalload_qc.rpt
@@ -74,9 +75,16 @@ LOG_VAL=${LOGDIR}/emalload.val.log
 export LOG_FILE LOG_PROC LOG_DIAG LOG_CUR LOG_VAL
 
 # Reference for this load
-JNUMBER=J:237616a
+JNUMBER=J:237616
+INHERIT_MODE='Not Specified'
+ALLELE_TYPE='Endonuclease-mediated'
+ALLELE_SUBTYPE='Null/knockout'
+ALLELE_STATUS='Approved'
+TRANSMISSION_STATE='Not Specified' # (no ES Cells are used)
+ALLELE_COLLECTION='IMPC'
 
-export JNUM
+export JNUMBER INHERIT_MODE ALLELE_TYPE ALLELE_SUBTYPE ALLELE_STATUS 
+export TRANSMISSION_STATE ALLELE_COLLECTION
 
 CREATEDBY=impc_emalload
 
