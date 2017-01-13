@@ -165,7 +165,7 @@ def exit(
     sys.exit(status)
  
 #
-# Purpose: process command line options
+# Purpose: open file descriptors
 #
 def initialize():
     global diagFile, errorFile, inputFile, errorFileName, diagFileName
@@ -247,6 +247,7 @@ def initialize():
 
     errorFile.write('Start Date/Time: %s\n\n' % (mgi_utils.date()))
 
+    return 0
 #
 # Purpose: Close files.
 #
@@ -260,7 +261,8 @@ def closeFiles():
     noteChunkFile.close()
     annotFile.close()
     newAlleleFile.close()
-
+ 
+    return 0
 #
 # Purpose:  sets global primary key variables
 #
@@ -287,6 +289,7 @@ def setPrimaryKeys():
     results = db.sql('select max(_Annot_key) + 1 as nextKey from VOC_Annot', 'auto')
     annotKey = results[0]['nextKey']
 
+    return 0
 #
 # Purpose:  BCPs the data into the database
 #
@@ -316,6 +319,7 @@ def bcpFiles():
 	diagFile.write('%s\n' % bcpCmd)
 	os.system(bcpCmd)
 
+    return 0
 
 #
 # Purpose:  processes data
@@ -492,8 +496,6 @@ def processFile():
         mgiKey = mgiKey + 1
         alleleKey = alleleKey + 1
 
-    #	end of "for line in inputFile.readlines():"
-
     #
     # Update the AccessionMax value
     #
@@ -502,17 +504,25 @@ def processFile():
         db.sql('select * from ACC_setMax(%d)' % (lineNum), None)
 	db.commit()
 
+    return 0
 #
 # Main
 #
 
-if __name__ == '__main__':
+#
+#  MAIN
+#
 
-	initialize()
+if initialize() != 0:
+    sys.exit(1)
 
-	setPrimaryKeys()
+if setPrimaryKeys() != 0:
+    sys.exit(1)
 
-	processFile()
+if processFile() != 0:
+    sys.exit(1)
 
-	bcpFiles()
+if bcpFiles() != 0:
+    sys.exit(1)
 
+sys.exit(0)
