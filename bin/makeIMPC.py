@@ -368,7 +368,7 @@ def createAlleleFile():
     for line in fpIMPC.readlines():
 	lineNum += 1
 	hasError = 0
-        tokens = line[:-1].split('\t')
+        tokens = map(string.strip, line[:-1].split('\t'))
 
 	markerSymbol = tokens[0]
         markerID = tokens[1]
@@ -480,8 +480,7 @@ def createAlleleFile():
 	    labCodeNotInMgiList.append('%s%s%s' % (lineNum, TAB, line))
 	    hasError = 1
 
-	# new requirement marker ID must be in the database as a preferred
-	# Gene or Pseudogene ID
+	# Requirement 7.2.3.4 
 	if markerID not in markerDict:
 	    markerIdNotInMgiList.append('%s%s%s' % (lineNum, TAB, line))
 	    hasError = 1
@@ -573,8 +572,8 @@ def writeQCReport():
 	fpQC.write(string.join(labCodeNotInMgiList, CRT))
     fpQC.write('Total: %s' % len(labCodeNotInMgiList))
 
-    # Requirement New
-    fpQC.write('%s%s Colony ID does not match IKMC Allele Colony ID Note, Marker ID not in MGI%s%s' % (CRT, CRT, CRT, CRT))
+    # Requirement 7.2.3.4
+    fpQC.write('%s%s 7.2.3.4 Colony ID does not match IKMC Allele Colony ID Note, Marker ID not in MGI%s%s' % (CRT, CRT, CRT, CRT))
     fpQC.write('Line#%sInput Line%s' % (TAB, CRT))
     fpQC.write('_____________________________________________________________%s' % CRT)
     if len(markerIdNotInMgiList):
