@@ -42,7 +42,7 @@ export FILEDIR ARCHIVEDIR LOGDIR RPTDIR OUTPUTDIR INPUTDIR
 
 # input/output
 #SOURCE_INPUT_FILE=${DATADOWNLOADS}/???
-#SOURCE_INPUT_FILE=/mgi/all/wts_projects/12100/12115/prelim_emal_file.txt
+#SOURCE_INPUT_FILE=/mgi/all/wts_projects/12100/12115/emal_sample_input.txt
 SOURCE_INPUT_FILE=${INPUTDIR}/emal_sample_input.txt
 SOURCE_COPY_INPUT_FILE=${INPUTDIR}/crispr_file.txt
 ALLELE_FILE=${OUTPUTDIR}/allele_file.txt
