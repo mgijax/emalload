@@ -91,11 +91,7 @@ fi
 #
 # createArchive
 #
-echo "archiving..." >> ${LOG}
-date >> ${LOG}
 preload ${OUTPUTDIR}
-echo "archiving complete" >> ${LOG}
-date >> ${LOG}
 
 #
 # There should be a "lastrun" file in the input directory that was created
@@ -140,6 +136,16 @@ date >> ${LOG}
 ./makeAllele.py  2>&1 >> ${LOG}
 STAT=$?
 checkStatus ${STAT} "makeAllele.py ${CONFIG}"
+
+#
+# Archive a copy of the input file, adding a timestamp suffix.
+#
+echo "" >> ${LOG_DIAG}
+date >> ${LOG_DIAG}
+echo "Archive input file" >> ${LOG_DIAG}
+TIMESTAMP=`date '+%Y%m%d.%H%M'`
+ARC_FILE=`basename ${SOURCE_INPUT_FILE}`.${TIMESTAMP}
+cp -p ${SOURCE_INPUT_FILE} ${ARCHIVEDIR}/${ARC_FILE}
 
 #
 # Touch the "lastrun" file to note when the load was run.
