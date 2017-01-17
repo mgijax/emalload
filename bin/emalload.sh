@@ -122,6 +122,121 @@ STAT=$?
 checkStatus ${STAT} "Copying input file"
 
 #
+# FUNCTION: Check for duplicate lines in an input file and write the lines
+#           to the sanity report.
+#
+checkDupLines ()
+{
+    FILE=$1    # The input file to check
+    REPORT=$2  # The sanity report to write to
+
+    echo "Duplicate Lines" >> ${REPORT}
+    echo "---------------" >> ${REPORT}
+    sort ${FILE} | uniq -d > ${TMP_FILE1}
+    cat ${TMP_FILE1} >> ${REPORT}
+    if [ `cat ${TMP_FILE1} | wc -l` -eq 0 ]
+    then
+        return 0
+    else
+        return 1
+    fi
+}
+
+#
+# FUNCTION: Check for lines with missing columns in an input file and write
+#           the line numbers to the sanity report.
+#
+checkColumns ()
+{
+    FILE=$1         # The input file to check
+    REPORT=$2       # The sanity report to write to
+    NUM_COLUMNS=$3  # The number of columns expected in each input record
+
+    echo "" >> ${REPORT}
+    echo "" >> ${REPORT}
+    echo "Lines With Missing Columns" >> ${REPORT}
+    echo "--------------------------" >> ${REPORT}
+   ${EMALLOAD}/bin/checkColumns.py ${FILE} ${NUM_COLUMNS} > ${TMP_FILE2}
+    cat ${TMP_FILE2} >> ${REPORT}
+    if [ `cat ${TMP_FILE2} | wc -l` -eq 0 ]
+    then
+        return 0
+    else
+        return 1
+    fi
+
+}
+
+#
+# FUNCTION: Check an input file to make sure it has a minimum number of lines.
+#
+checkLineCount ()
+{
+    FILE=$1        # The input file to check
+    REPORT=$2      # The sanity report to write to
+    NUM_LINES=$3   # The minimum number of lines expected in the input file
+
+    COUNT=`cat ${FILE} | wc -l | sed 's/ //g'`
+    if [ ${COUNT} -lt ${NUM_LINES} ]
+    then
+        echo "" >> ${REPORT}
+        echo "" >> ${REPORT}
+        echo "**** WARNING ****" >> ${REPORT}
+        echo "${FILE} has ${COUNT} lines." >> ${REPORT}
+        echo "Expecting at least ${NUM_LINES} lines." >> ${REPORT}
+        return 1
+    else
+        return 0
+    fi
+}
+
+#
+# Run sanity checks on the input file.
+#
+#
+# Create temporary files and make sure it is removed when this script
+# terminates.
+#
+TMP_FILE1=/tmp/`basename $0`.$$
+trap "rm -f ${TMP_FILE}" 0 1 2 15
+
+TMP_FILE2=/tmp/`basename $0`.$$
+trap "rm -f ${TMP_FILE}" 0 1 2 15
+
+echo "" >> ${LOG}
+date >> ${LOG}
+echo "Run sanity checks on the input file" >> ${LOG}
+SANITY_ERROR=0
+
+# reset SANITY_RPT
+rm -f ${SANITY_RPT}; >${SANITY_RPT}
+ 
+checkDupLines  ${SOURCE_COPY_INPUT_FILE} ${SANITY_RPT}
+if [ $? -ne 0 ]
+then
+    SANITY_ERROR=1
+fi
+
+checkColumns  ${SOURCE_COPY_INPUT_FILE} ${SANITY_RPT} ${NUM_COLUMNS}
+if [ $? -ne 0 ]
+then
+    SANITY_ERROR=1
+fi
+
+checkLineCount  ${SOURCE_COPY_INPUT_FILE} ${SANITY_RPT} ${FILE_MIN_SIZE}
+if [ $? -ne 0 ]
+then
+    SANITY_ERROR=1
+fi
+
+if [ ${SANITY_ERROR} -ne 0 ]
+then
+    echo "Sanity errors detected. See ${SANITY_RPT}" | tee -a ${LOG}
+    shutDown
+    exit 1
+fi
+
+#
 # run pre-processor to do QC and create allele input file
 #
 ${PREPROCESSOR} 2>&1 >> ${LOG}
