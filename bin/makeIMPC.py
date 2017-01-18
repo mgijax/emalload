@@ -135,6 +135,9 @@ labCodeDict = {}
 # {markerID: markerName, ...}
 markerDict = {}
 
+# markers mapped to colony IDs
+colonyDict = {}
+
 # template for creating allelel name for new alleles
 # marker name, sequenceNum, lab code name
 alleleNameTemplate = '%s; endonuclease-mediated mutation %s, %s'
@@ -174,7 +177,7 @@ def initialize():
     global logDiagFile, logCurFile, qcFile, impcFile, alleleFile, qcFile
     global jNumber, createdBy, inHeritMode, alleleType, alleleSubType, alleleStatus
     global transmissionState, alleleCollection
-    global colonyToAlleleDict, emAlleleDict, labCodeDict, markerDict
+    global colonyToAlleleDict, emAlleleDict, labCodeDict, markerDict, colonyDict
 
     logDiagFile = os.getenv('LOG_DIAG')
     logCurFile = os.getenv('LOG_CUR')
@@ -235,11 +238,12 @@ def initialize():
 		    colonyToAlleleDict[c].append(allele)
  
     # Query for em alleles and create lookup
-    results = db.sql('''select a._Allele_key, a.symbol, a1.accid as alleleID, 
-	    a2.accid as markerID
-	from ALL_Allele a,  ACC_Accession a1, ACC_Accession a2
+    results = db.sql('''select a._Allele_key, a.symbol as alleleSymbol, a1.accid as alleleID, 
+	    a2.accid as markerID, m.symbol as markerSymbol, m._Marker_key
+	from ALL_Allele a,  ACC_Accession a1, ACC_Accession a2, MRK_Marker m
 	where a._Allele_Type_key =  11927650
 	and a.symbol like '%<em%'
+	and a._Marker_key = m._Marker_key
 	and a._Allele_key = a1._Object_key
 	and a1._MGIType_key = 11
 	and a1.preferred = 1
@@ -249,11 +253,15 @@ def initialize():
 	and a2.preferred = 1
 	and a2._LogicalDB_key = 1''', 'auto')
     for r in results:
-	alleleSymbol = r['symbol']
+	alleleSymbol = r['alleleSymbol']
 	alleleID  = r['alleleID']
 	markerID = r['markerID']
+	markerKey = r['_Marker_key']
+	colonyID = ''
+	if markerKey in colonyDict:
+	    colonyID = colonyDict[markerKey]
 	# create allele object
-	allele = Allele(alleleID, alleleSymbol, markerID, None, None)
+	allele = Allele(alleleID, alleleSymbol, markerID, markerSymbol, colonyID)
 	emAlleleDict[alleleSymbol] = allele
 
     # Query for lab codes and create lookup
@@ -276,6 +284,13 @@ def initialize():
 	#print 'markerID: %s' % r['accid']
 	markerDict[r['accid']] = r['name']
 
+    # Query for alleles with colony IDs
+    results = db.sql('''select n._Object_key as markerKey, nc.note
+	from MGI_Note n, MGI_NoteChunk nc
+	where n._NoteType_key = 1041
+	and n._Note_key = nc._Note_key''', 'auto')
+    for r in results:
+	colonyDict[r['markerKey']] =  r['note']
     return 0
 
 #
