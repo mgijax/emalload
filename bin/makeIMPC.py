@@ -257,6 +257,7 @@ def initialize():
 	alleleID  = r['alleleID']
 	markerID = r['markerID']
 	markerKey = r['_Marker_key']
+	markerSymbol = r['markerSymbol']
 	colonyID = ''
 	if markerKey in colonyDict:
 	    colonyID = colonyDict[markerKey]
