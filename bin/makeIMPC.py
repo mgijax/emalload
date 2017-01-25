@@ -419,12 +419,12 @@ def createAlleleFile():
 
 	# Is the colony ID in the database?
 	alleleList = []
-	print 'colonyID: "%s"' % colonyID
+	#print 'colonyID: "%s"' % colonyID
 	if colonyID in colonyToAlleleDict:
 	    alleleList = colonyToAlleleDict[colonyID]
-	    print 'alleleList: %s' % alleleList
-	    for a in alleleList:
-		print a.toString()	
+	    #print 'alleleList: %s' % alleleList
+	    #for a in alleleList:
+	#	print a.toString()	
 	
 	# if colony ID associated with multiple alleles in db, report
 	# Requirement 7.2.2.1
