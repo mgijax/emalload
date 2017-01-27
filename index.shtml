@@ -1,26 +1,38 @@
 <TITLE>IMPC Endonuclease-mediated Allele Load</TITLE>
-<H1>>IMPC Endonuclease-mediated Allele Load</H1>
+<H1>IMPC Endonuclease-mediated Allele Load</H1>
 <UL>
 
 <H3>Inputs</H3>
 <UL>
 <LI><A HREF="/data/loads/mgi/emalload/impc/input/???">IMPC input file</A>
-<LI><A HREF="/data/loads/mgi/emalload/impc/input/allele_file.txt
+<LI><A HREF="/mgi/all/wts_projects/12100/12115/emal_sample_input.txt"> Test IMPC input file</A>
+<LI><A HREF="/data/loads/mgi/emalload/impc/input/allele_file.txt"> Allele Processor input file created by IMPC pre-processor</A>
 </UL>
 
 <H3>Outputs</H3>
 <UL>
+<LI><A HREF="/data/loads/mgi/emalload/impc/input/allele_file.txt"> Allele Processor input file created by preprocessor</A>
+<LI><A HREF="/data/loads/mgi/emalload/impc/output/allele_file.txt.diagnostics"> bcp command log</A>
+<LI><A HREF="/data/loads/mgi/emalload/impc/output/allele_file.txt.error"> Allele validation errors</A>
+<LI><A HREF="/data/loads/mgi/emalload/impc/output/allele_file.txt.new"> allele/marker info for new alleles including new Allele MGI ID</A>
 <LI><A HREF="/data/loads/mgi/emalload/impc/output/ALL_Allele.bcp">ALL_Allele.bcp</A>
+<LI><A HREF="/data/loads/mgi/emalload/impc/output/ALL_Allele_Mutation.bcp">ALL_Allele_Mutation.bcp</A>
+<LI><A HREF="/data/loads/mgi/emalload/impc/output/ACC_Accession.bcp">ACC_Accession.bcp</A>
+<LI><A HREF="/data/loads/mgi/emalload/impc/output/MGI_Reference_Assoc.bcp">MGI_Reference_Assoc.bcp</A>
+<LI><A HREF="/data/loads/mgi/emalload/impc/output/MGI_Note.bcp">MGI_Note.bcp</A>
+<LI><A HREF="/data/loads/mgi/emalload/impc/output/MGI_NoteChunk.bcp">MGI_NoteChunk.bcp</A>
+<LI><A HREF="/data/loads/mgi/emalload/impc/output/VOC_Annot.bcp">VOC_Annot.bcp</A>
 </UL>
 
 <H3>Diagnostic and Curation logs</H3>
 <UL>
-<LI><A HREF="/data/loads/mgi/emalload/impc/logs/impc.diag.log">impc.diag.log</A>
-<LI><A HREF="/data/loads/mgi/emalload/impc/logs/impc.cur.log">impc.cur.log</A>
+<LI><A HREF="/data/loads/mgi/emalload/impc/logs/emalload.diag.log">emalload.diag.log</A>
+<LI><A HREF="/data/loads/mgi/emalload/impc/logs/emalload.cur.log">emalload.cur.log</A>
 </UL>
 
-<H3>QC Report</H3>
+<H3>Sanity and QC Reports</H3>
 <UL>
+<LI><A HREF="/data/loads/mgi/emalload/impc/reports/sanity.rpt">sanity.rpt</A>
 <LI><A HREF="/data/loads/mgi/emalload/impc/reports/emalload_qc.rpt">emalload_qc.rpt</A>
 </UL>
 
@@ -32,6 +44,7 @@
 <H3>Wiki</H3>
 <UL>
 <LI><A HREF="http://mgiwiki/mediawiki/index.php/sw:emalload"><B>Wiki page</B></A>
+<LI><A HREF="http://wts.informatics.jax.org/searches/tr.detail.cgi?TR_Nr=12115">TR12115</A>
 </UL>
 
 </UL>
