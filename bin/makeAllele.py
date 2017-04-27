@@ -413,8 +413,8 @@ def processFile():
 
         # if no errors, process the allele
 
-	# allele (nomensymbol = null, isWildType = 0)
-        alleleFile.write('%d|%s|%s|%s|%s|%s|%s|%s|%s|%s||0|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s\n' \
+	# allele (isWildType = 0)
+        alleleFile.write('%d|%s|%s|%s|%s|%s|%s|%s|%s|%s|0|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s\n' \
             % (alleleKey, markerKey, strainOfOriginKey, inheritanceModeKey, alleleTypeKey, \
 	    alleleStatusKey, transmissionKey, collectionKey, alleleSymbol, alleleName, \
 	    isExtinct, isMixed, refKey, markerStatusKey, \
