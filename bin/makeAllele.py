@@ -319,6 +319,11 @@ def bcpFiles():
 	diagFile.write('%s\n' % bcpCmd)
 	os.system(bcpCmd)
 
+    # update serialization on mgi_reference_assoc
+    db.sql(''' select setval('mgi_reference_assoc_seq', (select max(_Assoc_key) + 1
+            from MGI_Reference_Assoc)) ''', None)
+    db.commit()
+
     return 0
 
 #
