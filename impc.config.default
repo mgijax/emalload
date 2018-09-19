@@ -41,15 +41,13 @@ INPUTDIR=${FILEDIR}/input
 export FILEDIR ARCHIVEDIR LOGDIR RPTDIR OUTPUTDIR INPUTDIR 
 
 # input/output
-#SOURCE_INPUT_FILE=${DATADOWNLOADS}/???
-#SOURCE_INPUT_FILE=/mgi/all/wts_projects/12100/12115/emal_sample_input.txt
-SOURCE_INPUT_FILE=${INPUTDIR}/emal_sample_input.txt
-#SOURCE_INPUT_FILE=${INPUTDIR}/emal_sample_input.testsanity.txt
+SOURCE_INPUT_FILE=${DATADOWNLOADS}/www.mousephenotype.org/mgi_crispr_allele_report.tsv
 SOURCE_COPY_INPUT_FILE=${INPUTDIR}/crispr_file.txt
 ALLELE_FILE=${OUTPUTDIR}/allele_file.txt
+CID_NOTE_FILE=${OUTPUTDIR}/cid_noteload.txt
 QC_FILE=${RPTDIR}/emalload_qc.rpt
 
-export SOURCE_INPUT_FILE SOURCE_COPY_INPUT_FILE ALLELE_FILE QC_FILE
+export SOURCE_INPUT_FILE SOURCE_COPY_INPUT_FILE ALLELE_FILE CID_NOTE_FILE QC_FILE
 
 # the preprocessor to use 
 PREPROCESSOR=makeIMPC.py
