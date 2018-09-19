@@ -1,3 +1,10 @@
+TAG: emalload-6-0-12-1
+DATE: 09/19/2018
+STAFF: sc
+CHANGES: TR12115 - finally file from IMITs, complete rewrite of QC
+Note - the makeAllele.py may not work, just testing the QC at the 
+moment
+ 
 TAG: emalload-6-0-10-2
 DATE: 02/01/2018
 STAFF: sc

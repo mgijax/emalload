@@ -51,11 +51,45 @@ then
 fi
 
 CONFIG=$1
+.  ${CONFIG}
 
 #
 # Establish the log file.
 #
 LOG=${LOG_DIAG}
+
+#
+#  Source the DLA library functions.
+#
+
+if [ "${DLAJOBSTREAMFUNC}" != "" ]
+then
+    if [ -r ${DLAJOBSTREAMFUNC} ]
+    then
+        . ${DLAJOBSTREAMFUNC}
+    else
+        echo "Cannot source DLA functions script: ${DLAJOBSTREAMFUNC}" | tee -a ${LOG}
+        exit 1
+    fi
+else
+    echo "Environment variable DLAJOBSTREAMFUNC has not been defined." | tee -a ${LOG}
+    exit 1
+fi
+
+#
+# createArchive
+#
+preload ${OUTPUTDIR}
+
+#
+# copy source input file
+#
+echo "copying source input file..." >> ${LOG}
+date >> ${LOG}
+$rm -rf ${SOURCE_COPY_INPUT_FILE}
+cp ${SOURCE_INPUT_FILE} ${SOURCE_COPY_INPUT_FILE}
+STAT=$?
+checkStatus ${STAT} "Copying input file"
 
 #
 # Create the IMPC Allele input files
@@ -70,5 +104,19 @@ then
     exit 1
 fi
 
+#
+# Archive a copy of the input file, adding a timestamp suffix.
+#
+echo "" >> ${LOG_DIAG}
+date >> ${LOG_DIAG}
+echo "Archive input file" >> ${LOG_DIAG}
+TIMESTAMP=`date '+%Y%m%d.%H%M'`
+ARC_FILE=`basename ${SOURCE_INPUT_FILE}`.${TIMESTAMP}
+cp -p ${SOURCE_INPUT_FILE} ${ARCHIVEDIR}/${ARC_FILE}
+
+#
+# run postload cleanup and email logs
+#
+shutDown
 exit 0
 
