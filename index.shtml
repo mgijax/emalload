@@ -4,17 +4,17 @@
 
 <H3>Inputs</H3>
 <UL>
-<LI><A HREF="/data/loads/mgi/emalload/impc/input/???">IMPC input file</A>
-<LI><A HREF="/mgi/all/wts_projects/12100/12115/emal_sample_input.txt"> Test IMPC input file</A>
+<LI><A HREF="/data/loads/mgi/emalload/impc/input/crispr_file.txt">IMPC input file</A>
 <LI><A HREF="/data/loads/mgi/emalload/impc/input/allele_file.txt"> Allele Processor input file created by IMPC pre-processor</A>
 </UL>
 
 <H3>Outputs</H3>
 <UL>
 <LI><A HREF="/data/loads/mgi/emalload/impc/input/allele_file.txt"> Allele Processor input file created by preprocessor</A>
-<LI><A HREF="/data/loads/mgi/emalload/impc/output/allele_file.txt.diagnostics"> bcp command log</A>
-<LI><A HREF="/data/loads/mgi/emalload/impc/output/allele_file.txt.error"> Allele validation errors</A>
-<LI><A HREF="/data/loads/mgi/emalload/impc/output/allele_file.txt.new"> allele/marker info for new alleles including new Allele MGI ID</A>
+<LI><A HREF="/data/loads/mgi/emalload/impc/output/cid_noteload.txt"> Note Load input file for new notes for existing alleles
+<LI><A HREF="/data/loads/mgi/emalload/impc/output/allele_file.txt.diagnostics">Allele Load bcp command log</A>
+<LI><A HREF="/data/loads/mgi/emalload/impc/output/allele_file.txt.error"> Allele Load validation errors</A>
+<LI><A HREF="/data/loads/mgi/emalload/impc/output/allele_file.txt.new"> Allele/Marker info for new alleles including new Allele MGI ID</A>
 <LI><A HREF="/data/loads/mgi/emalload/impc/output/ALL_Allele.bcp">ALL_Allele.bcp</A>
 <LI><A HREF="/data/loads/mgi/emalload/impc/output/ALL_Allele_Mutation.bcp">ALL_Allele_Mutation.bcp</A>
 <LI><A HREF="/data/loads/mgi/emalload/impc/output/ACC_Accession.bcp">ACC_Accession.bcp</A>

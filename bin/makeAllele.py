@@ -113,6 +113,7 @@ mutationFileName = outputDir + '/' + mutationTable + '.bcp'
 refFileName = outputDir + '/' + refTable + '.bcp'
 accFileName = outputDir + '/' + accTable + '.bcp'
 noteFileName = outputDir + '/' + noteTable + '.bcp'
+noteUpdateFileName = 
 noteChunkFileName = outputDir + '/' + noteChunkTable + '.bcp'
 annotFileName = outputDir + '/' + annotTable + '.bcp'
 
@@ -382,15 +383,15 @@ def processFile():
 
         # _vocab_key = 37 (Allele Status)
         alleleStatusKey = loadlib.verifyTerm('', 37, alleleStatus, lineNum, errorFile)
+
 	# _vocab_key = 61 (Allele Transmission)
         transmissionKey = loadlib.verifyTerm('', 61, transmission, lineNum, errorFile)
 
 	# _vocab_key = 92
 	collectionKey = loadlib.verifyTerm('', 92, collection, lineNum, errorFile)
 
-	# hard-coded
 	# _vocab_key = 73 (Marker-Allele Association Status)
-	# _term_key = 4268544 (Loaded)
+	# _term_key = 4268545 (Curated)
 	markerStatusKey = 4268545
 
 	# reference

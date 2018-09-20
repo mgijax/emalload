@@ -102,6 +102,9 @@ alleleCollection = ''
 jNumber = ''
 createdBy = ''
 
+# temp - will be getting this from the file
+alleleSubType = ''
+
 logDiagFile = None
 logCurFile = None
 
@@ -212,7 +215,7 @@ class Allele:
 #
 def initialize():
     global logDiagFile, logCurFile, qcFile, impcFile, alleleFile, noteloadFile
-    global jNumber, createdBy, inHeritMode, alleleStatus
+    global jNumber, createdBy, alleleSubType, inHeritMode, alleleStatus
     global transmissionState, alleleCollection, strainList
     global colonyToAlleleDict, alleleBySymbolDict, labCodeDict, markerDict, colonyDict
 
@@ -224,6 +227,7 @@ def initialize():
     noteloadFile = os.getenv('CID_NOTE_FILE')
     jNumber = os.getenv('JNUMBER')
     createdBy = os.getenv('CREATEDBY')
+    alleleSubType = os.getenv('ALLELE_SUBTYPE') # temp, will be getting this from the file
     inHeritMode = os.getenv('INHERIT_MODE')
     alleleStatus = os.getenv('ALLELE_STATUS')
     transmissionState = os.getenv('TRANSMISSION_STATE')
@@ -514,7 +518,7 @@ def createAlleleFile():
 	# tokens[6] - production center, not used by load
 	alleleClass = tokens[7] # formerly allele type
 	alleleType = tokens[8] # formerly mutation type
-	alleleSubType = tokens[9] # new to file; may not use
+	#alleleSubType = tokens[9] # temp, will be using this when req done
 	alleleDescription = tokens[10]
 	alleleSuperScript = tokens[11] # was symbol, now just superscript
 	alleleID = tokens[12] # can be blank
