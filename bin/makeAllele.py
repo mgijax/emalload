@@ -62,6 +62,10 @@
 #
 # History
 #
+# 09/2018	sc
+#	- TR12115 rewrite of load now that we have a 
+#		real input file
+#
 # 01/09/2016	sc
 #	- TR12115 CRISPR Allele load
 #
@@ -69,6 +73,7 @@
 import sys
 import os
 import db
+import string
 import mgi_utils
 import loadlib
 import sourceloadlib
@@ -78,15 +83,14 @@ import sourceloadlib
 #
 # from configuration file
 #
-user = os.environ['MGD_DBUSER']
-passwordFileName = os.environ['MGD_DBPASSWORDFILE']
-inputFileName = os.environ['ALLELE_FILE']
-outputDir = os.environ['OUTPUTDIR']
-BCP_COMMAND = os.environ['PG_DBUTILS'] + '/bin/bcpin.csh'
+user = os.getenv('MGD_DBUSER')
+passwordFileName = os.getenv('MGD_DBPASSWORDFILE')
+inputFileName = os.getenv('ALLELE_FILE')
+outputDir = os.getenv('OUTPUTDIR')
+BCP_COMMAND = os.getenv('PG_DBUTILS') + '/bin/bcpin.csh'
 
-DEBUG = 0		# if 0, not in debug mode
-
-bcpon = 1		# can the bcp files be bcp-ed into the database?  default is yes.
+DEBUG = os.getenv('LOG_DEBUG')	# if 'true', in debug mode and  bcp files 
+				# will not be bcp-ed into the database. Default is 'false'.
 
 diagFile = ''		# diagnostic file descriptor
 errorFile = ''		# error file descriptor
@@ -113,7 +117,6 @@ mutationFileName = outputDir + '/' + mutationTable + '.bcp'
 refFileName = outputDir + '/' + refTable + '.bcp'
 accFileName = outputDir + '/' + accTable + '.bcp'
 noteFileName = outputDir + '/' + noteTable + '.bcp'
-noteUpdateFileName = 
 noteChunkFileName = outputDir + '/' + noteChunkTable + '.bcp'
 annotFileName = outputDir + '/' + annotTable + '.bcp'
 
@@ -298,8 +301,8 @@ def bcpFiles():
 
     bcpdelim = "|"
 
-    if DEBUG or not bcpon:
-	return
+    if DEBUG == 'true':
+	return 0
 
     closeFiles()
 
@@ -342,7 +345,7 @@ def processFile():
 
         error = 0
         lineNum = lineNum + 1
-
+   	print '%s: %s' % (lineNum, line)
         # Split the line into tokens
         tokens = line[:-1].split('\t')
         try:
@@ -363,14 +366,24 @@ def processFile():
 	    createdBy  = tokens[14]
 
         except:
+	    print 'exiting with invalid line'
             exit(1, 'Invalid Line (%d): %s\n' % (lineNum, line))
 
+	print 'validating data and getting keys'
         # marker key
         markerKey = loadlib.verifyMarker(markerID, lineNum, errorFile)
 
         # _vocab_key = 36 (Allele Molecular Mutation)
-        mutationKey = loadlib.verifyTerm('', 36, mutationType, lineNum, errorFile)
-
+	mutationList = string.split(mutationType, '|')
+	if len(mutationList) > 1:
+	   print 'mutationList: %s' % mutationList
+	mutationKeyList = []
+	for m in mutationList:
+	    mutationKey = loadlib.verifyTerm('', 36, m, lineNum, errorFile)
+	    if mutationKey != 0:
+		mutationKeyList.append(mutationKey)
+	if len(mutationKeyList) > 1:
+	    print 'mutationKeyList: %s' % mutationKeyList
         # strains
         strainOfOriginKey = sourceloadlib.verifyStrain(strainOfOrigin, lineNum, errorFile)
 
@@ -402,11 +415,11 @@ def processFile():
         if createdByKey == 0:
             continue
 
-
+	print 'checking for missing data'
         # if errors, continue to next record
 	# errors are stored (via loadlib) in the .error log
         if markerKey == 0 \
-	        or mutationKey == 0 \
+	        or mutationKeyList == [] \
 	  	or strainOfOriginKey == 0 \
                 or inheritanceModeKey == 0 \
                 or alleleTypeKey == 0 \
@@ -415,10 +428,11 @@ def processFile():
 	 	or collectionKey == 0 \
 		or refKey == 0 \
 		or createdByKey == 0:
+	    print 'missing data, skipping this line'
             continue
 
         # if no errors, process the allele
-
+	print 'writing to allele file'
 	# allele (isWildType = 0)
         alleleFile.write('%d|%s|%s|%s|%s|%s|%s|%s|%s|%s|0|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s\n' \
             % (alleleKey, markerKey, strainOfOriginKey, inheritanceModeKey, alleleTypeKey, \
@@ -427,8 +441,9 @@ def processFile():
 	    createdByKey, createdByKey, createdByKey, loaddate, loaddate, loaddate))
 
 	# molecular mutation
-	mutationFile.write('%s|%s|%s|%s\n' \
-	    	% (alleleKey, mutationKey, loaddate, loaddate))
+	for mutationKey in mutationKeyList:
+	    mutationFile.write('%s|%s|%s|%s\n' \
+		% (alleleKey, mutationKey, loaddate, loaddate))
 
 	# reference association
 	refAssocTypeKey = 1011 # Original
@@ -505,8 +520,8 @@ def processFile():
     #
     # Update the AccessionMax value
     #
-
-    if not DEBUG:
+    print 'DEBUG: %s' % DEBUG
+    if DEBUG == 'false':
         db.sql('select * from ACC_setMax(%d)' % (lineNum), None)
 	db.commit()
 
