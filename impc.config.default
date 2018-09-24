@@ -74,7 +74,7 @@ LOG_VAL=${LOGDIR}/emalload.val.log
 export LOG_FILE LOG_PROC LOG_DIAG LOG_CUR LOG_VAL
 
 # Reference for this load
-JNUMBER=J:237616
+JNUMBER=J:265051
 INHERIT_MODE='Not Specified'
 ALLELE_SUBTYPE='Null/knockout'
 ALLELE_STATUS='Approved'
