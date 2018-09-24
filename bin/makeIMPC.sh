@@ -99,9 +99,21 @@ date >> ${LOG}
 echo "Create the IMPC Allele input file (makeIMPC.sh)" | tee -a ${LOG}
 ./makeIMPC.py 2>&1 >> ${LOG}
 STAT=$?
-if [ ${STAT} -eq 1 ]
+checkStatus ${STAT} "makeIMPC.py ${CONFIG}"
+#
+# run noteload to add colony id notes to existing alleles
+#
+
+if [ "${LOG_DEBUG}" != "true" ]
 then
-    exit 1
+    if [ -s ${CID_NOTE_FILE} ]
+    then
+	echo "" >> ${LOG}
+	date >> ${LOG}
+	${NOTELOAD}/mginoteload.csh ${EMALLOAD}/impc_noteload.config
+	STAT=$?
+	checkStatus ${STAT} "CID noteload ${CONFIG}"
+    fi
 fi
 
 #
