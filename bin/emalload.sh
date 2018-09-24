@@ -62,6 +62,7 @@ else
     echo "Missing configuration file: ${CONFIG}"
     exit 1
 fi
+
 # Establish the log file.
 #
 LOG=${LOG_DIAG}
@@ -243,7 +244,22 @@ ${PREPROCESSOR} 2>&1 >> ${LOG}
 STAT=$?
 checkStatus ${STAT} "${PREPROCESSOR}"
 
-
+#
+# run noteload to add colony id notes to existing alleles
+# check to make sure the file exists and is not size 0
+#
+if [ "${LOG_DEBUG}" != "true" ]
+then
+    if [ -s ${CID_NOTE_FILE} ]
+    then
+	echo "" >> ${LOG}
+	date >> ${LOG}
+	${NOTELOAD}/mginoteload.csh ${EMALLOAD}/impc_noteload.config
+	STAT=$?
+	checkStatus ${STAT} "CID noteload ${CONFIG}"
+    fi
+fi
+#
 # Create alleles
 #
 echo "" >> ${LOG}
