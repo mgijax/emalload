@@ -101,6 +101,7 @@ alleleStatus =   ''
 alleleCollection = ''
 jNumber = ''
 createdBy = ''
+host = ''
 
 # temp - will be getting this from the file
 alleleSubType = ''
@@ -162,6 +163,15 @@ strainList = []
 # marker name, sequenceNum, lab code name
 alleleNameTemplate = '%s; endonuclease-mediated mutation %s, %s'
 
+# Total number of input lines skipped because of discrepancies
+linesLoadedCt = 0
+
+# Total number of input lines loaded
+linesSkippedCt = 0
+
+# current line number - used for Total count in reporting
+lineNum = 0
+
 #
 # QC lists for reporting errors
 #
@@ -217,7 +227,8 @@ def initialize():
     global logDiagFile, logCurFile, qcFile, impcFile, alleleFile, noteloadFile
     global jNumber, createdBy, alleleSubType, inHeritMode, alleleStatus
     global transmissionState, alleleCollection, strainList
-    global colonyToAlleleDict, alleleBySymbolDict, labCodeDict, markerDict, colonyDict
+    global colonyToAlleleDict, alleleBySymbolDict, labCodeDict, markerDict
+    global colonyDict, host
 
     logDiagFile = os.getenv('LOG_DIAG')
     logCurFile = os.getenv('LOG_CUR')
@@ -232,6 +243,7 @@ def initialize():
     alleleStatus = os.getenv('ALLELE_STATUS')
     transmissionState = os.getenv('TRANSMISSION_STATE')
     alleleCollection = os.getenv('ALLELE_COLLECTION')
+    host = os.getenv('HOST')
 
     if openFiles() != 0:
 	sys.exit(1)
@@ -491,18 +503,23 @@ def findAlleleBySymbol(symbol):
 # Purpose: Read the IMPC file and QC. Create a Allele input file
 #
 def createAlleleFile():
-    global missingRequiredValueList, cidMatchToMultiList, cidMatchMarkerIdMismatchList
-    global cidMatchAlleleStatusDiscrepList
-    global labCodeNotInMgiList, markerIdNotInMgiList, alleleIdNotInMGIList, strainNotInMgiList
-    global unknownAlleleClassList, unknownAlleleTypeList, alleleIdMatchAlleleStatusDiscrepList
+    global missingRequiredValueList, cidMatchToMultiList
+    global cidMatchMarkerIdMismatchList, cidMatchAlleleStatusDiscrepList
+    global cidMatchAlleleSSMismatchList
+    global labCodeNotInMgiList, markerIdNotInMgiList, alleleIdNotInMGIList
+    global strainNotInMgiList, unknownAlleleClassList, unknownAlleleTypeList
+    global alleleIdMatchAlleleStatusDiscrepList
     global alleleIdMatchMarkerIdMismatchList, alleleIdMatchAlleleSSMismatchList
-    global alleleIdMatchColonyIDMismatchList, alleleIdMatchColonyIdMatchToMultiList
-    global alleleIdMatchColonyIdMatchToDiffAlleleList, cidMatchAlleleSSMismatchList
-    global SymbolMatchAlleleNotApprovedList, symbolMatchColonyIdMismatchList
-    global symbolMatchMultiAlleleList, addCidSymbolMatchList, addCidAlleleIDMatchList
+    global alleleIdMatchColonyIDMismatchList
+    global alleleIdMatchColonyIdMatchToMultiList
+    global alleleIdMatchColonyIdMatchToDiffAlleleList
+    global symbolMatchAlleleStatusDiscrepList, symbolMatchColonyIdMismatchList
+    global symbolMatchMultiAlleleList
+    global addCidSymbolMatchList, addCidAlleleIDMatchList
+    global linesSkippedCt, linesLoadedCt, lineNum
 
-    lineNum = 0
     header = fpIMPC.readline()
+    lineNum = 1 # ignoring header
     for line in fpIMPC.readlines(): 
 	lineNum += 1
 	hasError = 0
@@ -554,6 +571,7 @@ def createAlleleFile():
 	if len(missingDataList):
 	    missingRequiredValueList.append('%s%s%s%s%s' % (lineNum, TAB, string.join(missingDataList, ', '), TAB, line))
 	    print '  ### missing fields in input file, skip remaining QC'
+	    linesSkippedCt += 1
 	    continue	# If missing fields skip remainder of QC
 
 	# Requirement 7.2A1 col2
@@ -570,14 +588,17 @@ def createAlleleFile():
 	if string.lower(alleleClass) != 'endonuclease-mediated':
 	    unknownAlleleClassList.append('%s%s%s' % (lineNum, TAB, line))
             hasError = 1 
+	else:
+	    alleleClass = 'Endonuclease-mediated' # not capitalized in the file, cap in DB
 
 	# Requirement 7.2A1 col9
 	if string.lower(alleleType) not in ('deletion', 'hdr', 'hr', 'indel'):
 	    unknownAlleleTypeList.append('%s%s%s' % (lineNum, TAB, line))
             hasError = 1
-
+		
 	if hasError: # skip to next line if any of the above checks fails
 	    print '  ### unexpected data in input file, skip remaining QC'
+	    linesSkippedCt += 1
 	    continue
 
 	#
@@ -689,6 +710,7 @@ def createAlleleFile():
 			cidMatchToMultiList.append('%s%s%s%s%s%s%s%s%s%s%s%s%s%s' % (lineNum, TAB, dbA.aid, TAB, dbA.asym, TAB, line, CRT))
 			hasError = 1
 			print '  ###  multiple alleles for colony ID, skip remaining checks'
+			linesSkippedCt += 1
 			continue # multiple alleles for colony ID, don't do further checks
 
 		dbA = alleleList[0] # there is only one
@@ -785,13 +807,16 @@ def createAlleleFile():
 	#
 	# If no errors write out to allele file
 	#
-	if hasError == 0:
+	if hasError != 0: # count the lines in the input that are skipped
+	    linesSkippedCt += 1
+	else:
+	    linesLoadedCt += 1
 	    print '  #### No allele identified in DB and no errors; translate stuff and create allele'
 	    # translate allele type
 	    if string.lower(alleleType) in ('deletion', 'hdr', 'hr'):
-		alleleType = 'intragenic deletion' 
+		alleleType = 'Intragenic deletion' 
 	    else:
-		alleleType = 'intragenic deletion|insertion'
+		alleleType = 'Intragenic deletion|Insertion'
 
 	    # get the sequencNum from the allele
 	    seqNumFinder = re.compile ( 'em(.*)\(' )
@@ -809,7 +834,10 @@ def createAlleleFile():
     return 0
 
 def writeQCReport():
-    fpQC.write('7.2.A.1 Required Value Missing or Invalid%s%s' % (CRT, CRT))
+    fpQC.write('Total lines in the input file (%s:%s) including header: %s%s%s' % (host, impcFile, lineNum, CRT, CRT))
+    fpQC.write('Total lines from the input file loaded: %s%s%s' % (linesLoadedCt, CRT, CRT))
+    fpQC.write('Total lines from the input file skipped: %s%s%s' % (linesSkippedCt, CRT, CRT))
+    fpQC.write('%s%s7.2.A.1 Required Value Missing or Invalid%s%s' % (CRT, CRT, CRT, CRT))
     fpQC.write('Line#%s Missing Value(s)%sInput Line%s' % (TAB, TAB, CRT))
     fpQC.write('_____________________________________________________________%s' % CRT)
     if len(missingRequiredValueList):
@@ -830,7 +858,7 @@ def writeQCReport():
 	 fpQC.write(string.join(strainNotInMgiList))
     fpQC.write('Total: %s' % len(strainNotInMgiList))
 
-    fpQC.write('%s%s7.2.A1 Allele Class not endonuclease-mediated%s%s' % (CRT, CRT, CRT, CRT))
+    fpQC.write('%s%s7.2.A1 Allele Class not Endonuclease-mediated%s%s' % (CRT, CRT, CRT, CRT))
     fpQC.write('Line#%sInput Line%s' % (TAB, CRT))
     fpQC.write('_____________________________________________________________%s' % CRT)
     if len(unknownAlleleClassList):
