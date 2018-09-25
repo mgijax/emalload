@@ -250,8 +250,10 @@ checkStatus ${STAT} "${PREPROCESSOR}"
 #
 if [ "${LOG_DEBUG}" != "true" ]
 then
+    echo 'executing noteload' >> ${LOG}
     if [ -s ${CID_NOTE_FILE} ]
     then
+	echo 'cid file is not empty' >> ${LOG}
 	echo "" >> ${LOG}
 	date >> ${LOG}
 	${NOTELOAD}/mginoteload.csh ${EMALLOAD}/impc_noteload.config
