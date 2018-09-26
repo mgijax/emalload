@@ -80,7 +80,7 @@ fi
 # createArchive
 #
 preload ${OUTPUTDIR}
-rm ${OUTPUTDIR}/*
+rm -f ${OUTPUTDIR}/*
 
 #
 # copy source input file

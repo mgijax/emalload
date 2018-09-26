@@ -93,6 +93,7 @@ fi
 # createArchive
 #
 preload ${OUTPUTDIR}
+rm -f ${OUTPUTDIR}/*
 
 #
 # There should be a "lastrun" file in the input directory that was created
