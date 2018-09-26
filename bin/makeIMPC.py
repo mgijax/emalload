@@ -169,6 +169,9 @@ linesLoadedCt = 0
 # Total number of input lines loaded
 linesSkippedCt = 0
 
+# Total number of alleles found to be in the DB
+allelesFoundCt = 0
+
 # current line number - used for Total count in reporting
 lineNum = 0
 
@@ -292,7 +295,7 @@ def initialize():
 		alleles =  colonyToAlleleDict[c]
 		for a in alleles:
 		    symbolList.append(a.asym)
-		if alleleSymbol not in symbolList: # don't add duplicate allele to list
+		if alleleSymbol not in symbolList: # don't add duplicate alleles
 		    colonyToAlleleDict[c].append(allele)
 
     # Query for alleles with colony IDs
@@ -331,7 +334,6 @@ def initialize():
 	colonyID = ''
 	if alleleKey in colonyDict:
 	    colonyID = colonyDict[alleleKey]
-	    print 'colony ID from colonyDict: %s' % colonyID
 	# create allele object
 	allele = Allele(alleleID, alleleSymbol, alleleStatus, alleleType, markerID, markerSymbol, colonyID)
 	alleleBySymbolDict[alleleSymbol] = allele
@@ -516,13 +518,14 @@ def createAlleleFile():
     global symbolMatchAlleleStatusDiscrepList, symbolMatchColonyIdMismatchList
     global symbolMatchMultiAlleleList
     global addCidSymbolMatchList, addCidAlleleIDMatchList
-    global linesSkippedCt, linesLoadedCt, lineNum
+    global linesSkippedCt, linesLoadedCt, allelesFoundCt, lineNum
 
     header = fpIMPC.readline()
     lineNum = 1 # ignoring header
     for line in fpIMPC.readlines(): 
 	lineNum += 1
 	hasError = 0
+	alleleFound = 0
         tokens = map(string.strip, line[:-1].split('\t'))
 	print '#### Split input line: %s' % tokens
 	
@@ -677,12 +680,14 @@ def createAlleleFile():
 				hasError = 1
 				cidError = 1
 
-		    if hasError == 0 and cidError == 0 and dbColonyIDList == []:
-			# Requirement 7.2.D4 if no error and no cid in the database, add a 
-			# new note to the allele
-		    	fpNoteload.write('%s%s%s%s' % (alleleID, TAB, colonyID, CRT))
-		    	addCidAlleleIDMatchList.append('%s%s%s%s%s%s%s%s%s%s%s' % \
-	                       (lineNum, TAB, alleleID, TAB, calcAlleleSymbol, TAB, colonyID, TAB, colonyID, TAB, line))
+		    if hasError == 0 and cidError == 0:
+			alleleFound = 1
+			if dbColonyIDList == []:
+			    # Requirement 7.2.D4 if no error and no cid in the database, add a 
+			    # new note to the allele
+			    fpNoteload.write('%s%s%s%s' % (alleleID, TAB, colonyID, CRT))
+			    addCidAlleleIDMatchList.append('%s%s%s%s%s%s%s%s%s%s%s' % \
+				   (lineNum, TAB, alleleID, TAB, calcAlleleSymbol, TAB, colonyID, TAB, colonyID, TAB, line))
 
 
 	    else: # Requirement 7.2.C1 Allele ID not in MGI OR matches different object type
@@ -720,21 +725,24 @@ def createAlleleFile():
                         (lineNum, TAB,  dbA.aid, TAB, dbA.asym, TAB, dbA.ast, TAB, line))
                     hasError = 1
 		else:
-		    # The following two checks could be replaced with a calculated allele symbol match
+		    # The following two checks could be replaced with a 
+		    # calculated allele symbol match
 		    # Requirement 7.2.F2 Marker ID check
 		    if markerID != dbA.mid:
 			cidMatchMarkerIdMismatchList.append( '%s%s%s%s%s%s%s%s%s%s%s' % \
 			    (lineNum, TAB, dbA.aid, TAB, dbA.asym, TAB, line))
 			hasError = 1
 		    # Requirement 7.2.F2 Allele superscript check
-		    print ' cid match, alleleSuperScript: %s' % alleleSuperScript
+		    print 'cid match, alleleSuperScript: %s' % alleleSuperScript
 		    print 'cid match dbAlleleSymbol: %s' % dbA.asym
 		    if string.find(dbA.asym, alleleSuperScript) == -1:
 			cidMatchAlleleSSMismatchList.append('%s%s%s%s%s%s%s' % \
 			    (lineNum, TAB, dbA.aid, TAB, dbA.asym, TAB, line))
 			hasError = 1
+		if hasError == 0:
+		    alleleFound = 1
 		# END COLONY ID MATCH
-
+		
 	    # BEGIN NO COLONY ID MATCH Requirement 7.2.G
 	    else:
 		print '  #### No allele ID, no cid match, calculate allele symbol and check in DB'
@@ -767,8 +775,9 @@ def createAlleleFile():
 		    # Requirement 7.2.H2 Colony Name/ID Check
 		    if aID in alleleByIDDict: # has to be, but good to check
 			allele = alleleByIDDict[aID]
-			if allele.cid != '': # if there is a cid for the symbol matched allele
-					     # it has to be a mismatch with the inc cid
+			# if there is a cid for the symbol it has to be a 
+			# mismatch with the inc cid
+			if allele.cid != '': 
 			    symbolMatchColonyIdMismatchList.append('%s%s%s%s%s%s%s%s%s' % \
 				(lineNum, TAB, aID, TAB, symbol, TAB, allele.cid, TAB, line))
 			    symbolError = 1
@@ -776,6 +785,7 @@ def createAlleleFile():
 		    # Requirement 7.2.H4 No CID Match, Symbol match, and no errors
 		    # add new note to the allele
 		    if symbolError == 0 and hasError == 0:
+			alleleFound = 1
 			fpNoteload.write('%s%s%s%s' % (aID, TAB, colonyID, CRT))
 			addCidSymbolMatchList.append('%s%s%s%s%s%s%s%s%s%s%s' % \
 			    (lineNum, TAB, aID, TAB, symbol, TAB, colonyID, TAB, colonyID, TAB, line))
@@ -807,8 +817,10 @@ def createAlleleFile():
 	#
 	# If no errors write out to allele file
 	#
-	if hasError != 0: # count the lines in the input that are skipped
+	if hasError == 1: # count the lines in the input that are skipped
 	    linesSkippedCt += 1
+	elif alleleFound == 1:
+	    allelesFoundCt +=1
 	else:
 	    linesLoadedCt += 1
 	    print '  #### No allele identified in DB and no errors; translate stuff and create allele'
@@ -835,8 +847,10 @@ def createAlleleFile():
 
 def writeQCReport():
     fpQC.write('Total lines in the input file (%s:%s) including header: %s%s%s' % (host, impcFile, lineNum, CRT, CRT))
+    fpQC.write('Total alleles found in the DB: %s%s%s' % (allelesFoundCt, CRT, CRT))
     fpQC.write('Total lines from the input file loaded: %s%s%s' % (linesLoadedCt, CRT, CRT))
     fpQC.write('Total lines from the input file skipped: %s%s%s' % (linesSkippedCt, CRT, CRT))
+
     fpQC.write('%s%s7.2.A.1 Required Value Missing or Invalid%s%s' % (CRT, CRT, CRT, CRT))
     fpQC.write('Line#%s Missing Value(s)%sInput Line%s' % (TAB, TAB, CRT))
     fpQC.write('_____________________________________________________________%s' % CRT)
