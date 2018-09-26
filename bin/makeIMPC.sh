@@ -87,7 +87,7 @@ rm -f ${OUTPUTDIR}/*
 #
 echo "copying source input file..." >> ${LOG}
 date >> ${LOG}
-$rm -rf ${SOURCE_COPY_INPUT_FILE}
+rm -rf ${SOURCE_COPY_INPUT_FILE}
 cp ${SOURCE_INPUT_FILE} ${SOURCE_COPY_INPUT_FILE}
 STAT=$?
 checkStatus ${STAT} "Copying input file"
