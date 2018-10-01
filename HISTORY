@@ -1,3 +1,10 @@
+TAG: emalload-6-0-12-3
+DATE: 10/01/2018
+STAFF: sc
+CHANGES: TR12115
+1) updates to use IMPC raw allele type (mutation type) and subtype to 
+    translate to the proper MGI mutation type and subtype
+
 TAG: emalload-6-0-12-2
 DATE: 09/20/2018
 STAFF: sc

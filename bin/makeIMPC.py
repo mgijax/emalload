@@ -103,9 +103,6 @@ jNumber = ''
 createdBy = ''
 host = ''
 
-# temp - will be getting this from the file
-alleleSubType = ''
-
 logDiagFile = None
 logCurFile = None
 
@@ -131,6 +128,16 @@ fpNoteload = None
 #
 # lookups
 #
+#
+
+# expected values for impc allele type (mutation type)
+impcAlleleTypeList = []
+
+# expected values for impc allele subtype
+impcSubTypeList = []
+
+# allele type/subtype translation
+alleleTypeTransDict = {}
 
 # colonyId to allele symbol in database
 # {colonyID: [a1, ...an], ...}
@@ -184,6 +191,7 @@ markerIdNotInMgiList = []
 strainNotInMgiList = []		
 unknownAlleleClassList = []     
 unknownAlleleTypeList = []      
+unknownSubTypeList = []
 alleleIdNotInMGIList = []	
 alleleIdMatchAlleleStatusDiscrepList = []	
 alleleIdMatchMarkerIdMismatchList = []		
@@ -203,10 +211,12 @@ symbolMatchMultiAlleleList  = []
 addCidSymbolMatchList = []
 addCidAlleleIDMatchList = []
 
-#
-# convenience object for allele information
-#
 class Allele:
+    #
+    # Is: data object for a Allele
+    # Has: a set of allele attributes
+    # Does: provides direct access to its attributes
+    #
     def __init__(self, alleleID,    # string - allele  MGI ID
             alleleSymbol,           # string - allele symbol
 	    alleleStatus,	    # string - allele status
@@ -223,15 +233,23 @@ class Allele:
 	self.cid = colonyID
     def toString(this):
 	return '%s, %s, %s, %s, %s, %s' % (this.aid, this.asym, this.ast, this.mid, this.ms, this.cid)
-#
-# Purpose: Initialization
-#
+
 def initialize():
+    # Purpose: create lookups, open files
+    #   get max keys from the db
+    # Returns: 1 if error, else 0
+    # Assumes: Nothing
+    # Effects: Sets global variables, exits if a file can't be opened,
+    #  creates files in the file system
+
     global logDiagFile, logCurFile, qcFile, impcFile, alleleFile, noteloadFile
-    global jNumber, createdBy, alleleSubType, inHeritMode, alleleStatus
+    global jNumber, createdBy, inHeritMode, alleleStatus
     global transmissionState, alleleCollection, strainList
     global colonyToAlleleDict, alleleBySymbolDict, labCodeDict, markerDict
-    global colonyDict, host
+    global colonyDict, host, alleleTypeTransDict, impcAlleleTypeList
+    global impcSubTypeList
+
+    db.useOneConnection(1)
 
     logDiagFile = os.getenv('LOG_DIAG')
     logCurFile = os.getenv('LOG_CUR')
@@ -241,16 +259,25 @@ def initialize():
     noteloadFile = os.getenv('CID_NOTE_FILE')
     jNumber = os.getenv('JNUMBER')
     createdBy = os.getenv('CREATEDBY')
-    alleleSubType = os.getenv('ALLELE_SUBTYPE') # temp, will be getting this from the file
     inHeritMode = os.getenv('INHERIT_MODE')
     alleleStatus = os.getenv('ALLELE_STATUS')
     transmissionState = os.getenv('TRANSMISSION_STATE')
     alleleCollection = os.getenv('ALLELE_COLLECTION')
     host = os.getenv('HOST')
 
+    impcAlleleTypeList = string.split(os.getenv('IMPC_ALLELETYPES'), ', ')
+    impcSubTypeList = string.split(os.getenv('IMPC_SUBTYPES'), ', ')
+    print 'impcAlleleTypeList: %s' % impcAlleleTypeList
+    print 'impcSubTypeList: %s' % impcSubTypeList
+
+    alleleTypeTransString = os.getenv('ALLELE_TYPE_TRANS')
+    alleleTypeTransDict = dict(x.split('=') for x in alleleTypeTransString.split('\n'))
+    print 'alleleTypeTransString: %s' % alleleTypeTransString
+    print 'alleleTypeTransDict: %s' % alleleTypeTransDict
+
     if openFiles() != 0:
 	sys.exit(1)
-    
+
     # Query for IKMC Allele Colony Name - there are multi per allele
     results = db.sql('''select distinct nc.note as cidNote, a.symbol as alleleSymbol, t.term as alleleStatus, 
 	    t2.term as alleleType, m.symbol as markerSymbol, a1.accid as alleleID, a2.accid as markerID, 
@@ -366,10 +393,13 @@ def initialize():
 
     return 0
 
-#
-# Purpose: Open files.
-#
 def openFiles():
+    # Purpose: Open input/output files.
+    # Returns: 1 if error, else 0
+    # Assumes: Nothing
+    # Effects: Sets global variables, exits if a file can't be opened,
+    #  creates files in the file system
+
     global fpLogDiag, fpLogCur, fpQC
     global fpIMPC, fpAllele, fpNoteload
 
@@ -434,31 +464,31 @@ def openFiles():
 # Purpose: Close files.
 #
 def closeFiles():
+    # Purpose: Close all file descriptors
+    # Returns: 1 if error, else 0
+    # Assumes: all file descriptors were initialized
+    # Effects: Nothing
+    # Throws: Nothing
 
-    if fpLogDiag:
+    try:
         fpLogDiag.close()
-
-    if fpLogCur:
         fpLogCur.close()
-    
-    if fpQC:
 	fpQC.close()
-
-    if fpIMPC:
         fpIMPC.close()
-
-    if fpAllele:
         fpAllele.close()
-
-    if fpNoteload:
 	fpNoteload.close()
-
+    except:
+	return 1
     return 0
 
-#
-# Purpose: query for the MGI Type of an accession id
-#
-def queryMGIType(id):
+def queryMGIType(id): # An MGI Accession ID
+    # Purpose: Find the MGI Type of an MGI Accession ID
+    # Returns: '' if "id" is not in database; else tableName
+    #	of the MGI Type
+    # Assumes:  connection to a database
+    # Effects: Nothing
+    # Throws: Nothing
+
     # exclude VOC_Evidence (25)
     results = db.sql('''select am.tableName
 	from ACC_Accession a, ACC_MGIType am
@@ -475,10 +505,13 @@ def queryMGIType(id):
 	    typeList.append(r['tableName'])
 	return string.join(typeList, ', ')
 
-#
-# Purpose: find the lab code in an allele subscript
-#
-def findLabCode(alleleSS):
+def findLabCode(alleleSS): # and IMPC allele subscript
+    # Purpose: Finds the labcode in an allele subscript
+    # Returns: '' if no labCode found in "alleleSS; else the labCode
+    # Assumes: Nothing
+    # Effects: Nothing
+    # Throws: Nothing
+
     labCode = ''
     labCodeFinder = re.compile ('\)(\w*)')
     match = labCodeFinder.search(alleleSS)
@@ -486,10 +519,13 @@ def findLabCode(alleleSS):
 	labCode = match.group(1)
     return labCode
 
-#
-# Purpose: query for an allele by its symbol
-#
-def findAlleleBySymbol(symbol):
+def findAlleleBySymbol(symbol): # an MGI allele symbol
+    # Purpose: query for an allele by its symbol
+    # Returns: the result set from the query; may be empty
+    # Assumes:  db connection
+    # Effects: Nothing
+    # Throws: Nothing
+
     results = db.sql('''select t.term as status, a.symbol, aa.accid
 	from ALL_Allele a, VOC_Term t, ACC_Accession aa
 	where a.symbol  = '%s'
@@ -499,18 +535,22 @@ def findAlleleBySymbol(symbol):
 	and aa._LogicalDB_key = 1
 	and aa.preferred = 1
 	and aa.prefixPart = 'MGI:' ''' % symbol, 'auto')
+
     return results
 	
-#
-# Purpose: Read the IMPC file and QC. Create a Allele input file
-#
 def createAlleleFile():
+    # Purpose: Read the IMPC file and QC. Create a Allele input file
+    # Returns: 1 if error,  else 0
+    # Assumes: file descriptors have been initialized
+    # Effects: writes to the file system
+    # Throws: Nothing
+
     global missingRequiredValueList, cidMatchToMultiList
     global cidMatchMarkerIdMismatchList, cidMatchAlleleStatusDiscrepList
     global cidMatchAlleleSSMismatchList
     global labCodeNotInMgiList, markerIdNotInMgiList, alleleIdNotInMGIList
     global strainNotInMgiList, unknownAlleleClassList, unknownAlleleTypeList
-    global alleleIdMatchAlleleStatusDiscrepList
+    global unknonhwnSubTypeList, alleleIdMatchAlleleStatusDiscrepList
     global alleleIdMatchMarkerIdMismatchList, alleleIdMatchAlleleSSMismatchList
     global alleleIdMatchColonyIDMismatchList
     global alleleIdMatchColonyIdMatchToMultiList
@@ -538,7 +578,7 @@ def createAlleleFile():
 	# tokens[6] - production center, not used by load
 	alleleClass = tokens[7] # formerly allele type
 	alleleType = tokens[8] # formerly mutation type
-	#alleleSubType = tokens[9] # temp, will be using this when req done
+	alleleSubType = tokens[9] 
 	alleleDescription = tokens[10]
 	alleleSuperScript = tokens[11] # was symbol, now just superscript
 	alleleID = tokens[12] # can be blank
@@ -564,8 +604,6 @@ def createAlleleFile():
 	    missingDataList.append('Allele Class (type)')
 	if alleleType == '':
 	    missingDataList.append('Allele (mutation) Type')
-	if alleleSubType == '':
-            missingDataList.append('Allele SubType')
 	if alleleDescription == '':
 	    missingDataList.append('Allele Description')
 	if alleleSuperScript == '':
@@ -595,10 +633,15 @@ def createAlleleFile():
 	    alleleClass = 'Endonuclease-mediated' # not capitalized in the file, cap in DB
 
 	# Requirement 7.2A1 col9
-	if string.lower(alleleType) not in ('deletion', 'hdr', 'hr', 'indel'):
+	print 'IMPC alleleType: %s subType: %s' % (alleleType, alleleSubType)
+	if string.lower(alleleType) not in impcAlleleTypeList:
 	    unknownAlleleTypeList.append('%s%s%s' % (lineNum, TAB, line))
             hasError = 1
-		
+	# Requirement 7.2A1 col10
+	if alleleSubType != '' and string.lower(alleleSubType) not in impcSubTypeList:
+	    unknownSubTypeList.append('%s%s%s' % (lineNum, TAB, line))
+            hasError = 1
+
 	if hasError: # skip to next line if any of the above checks fails
 	    print '  ### unexpected data in input file, skip remaining QC'
 	    linesSkippedCt += 1
@@ -824,11 +867,27 @@ def createAlleleFile():
 	else:
 	    linesLoadedCt += 1
 	    print '  #### No allele identified in DB and no errors; translate stuff and create allele'
-	    # translate allele type
-	    if string.lower(alleleType) in ('deletion', 'hdr', 'hr'):
-		alleleType = 'Intragenic deletion' 
-	    else:
-		alleleType = 'Intragenic deletion|Insertion'
+	    # translate allele type. The key is the pipe-delim IMPC alleleType
+	    # and subType, value is pipe-delim MGI alleleType and subType
+	    # impc key and mgi value may not have a subtype - thefore no pipe
+	    # mgi alleleType and subType may be multi-valued ';' delimited
+	    impcKey = '%s|%s' % (string.lower(alleleType), string.lower(alleleSubType))
+	    mgiValue = alleleTypeTransDict[impcKey]
+	    print 'impcKey: %s mgiValue: %s' % (impcKey, mgiValue)
+
+	    # The case where there is no subtype
+	    mgiAlleleType = mgiValue
+	    mgiSubType = ''
+
+	    # The case where there is a subtype
+	    if string.find(mgiValue, '|') != -1:
+		mgiAlleleType, mgiSubType = string.split(mgiValue, '|')
+	    print 'mgiAlleletype: %s mgiSubType: %s' % ( mgiAlleleType, mgiSubType)
+
+	    # both mgiAlleleType and mgiSubType can be multivalued
+            alleleTypes = string.split(mgiAlleleType, ';')
+	    subTypes = string.split(mgiSubType, ';')
+	    print 'alleleTypes: %s subTypes: %s' % (alleleTypes, subTypes)
 
 	    # get the sequencNum from the allele
 	    seqNumFinder = re.compile ( 'em(.*)\(' )
@@ -841,11 +900,17 @@ def createAlleleFile():
 	    # calculate allele name
 	    alleleName = alleleNameTemplate % (markerName, sequenceNum, labName)
 
-	    fpAllele.write('%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s' % (markerID, TAB, alleleType, TAB, alleleDescription, TAB, colonyID, TAB, strain, TAB, calcAlleleSymbol, TAB, alleleName, TAB, inHeritMode, TAB, alleleClass, TAB, alleleSubType, TAB, alleleStatus, TAB, transmissionState, TAB, alleleCollection, TAB, jNumber, TAB, createdBy, CRT))
+	    fpAllele.write('%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s' % (markerID, TAB, markerSymbol, TAB, mgiAlleleType, TAB, alleleDescription, TAB, colonyID, TAB, strain, TAB, calcAlleleSymbol, TAB, alleleName, TAB, inHeritMode, TAB, alleleClass, TAB, mgiSubType, TAB, alleleStatus, TAB, transmissionState, TAB, alleleCollection, TAB, jNumber, TAB, createdBy, CRT))
 
     return 0
 
 def writeQCReport():
+    # Purpose: write all QC errors to the QC report file
+    # Returns: 1 if error, else 0
+    # Assumes: file descriptors have been initialized
+    # Effects: writes to the file system
+    # Throws: Nothing
+
     fpQC.write('Total lines in the input file (%s:%s) including header: %s%s%s' % (host, impcFile, lineNum, CRT, CRT))
     fpQC.write('Total alleles found in the DB: %s%s%s' % (allelesFoundCt, CRT, CRT))
     fpQC.write('Total lines from the input file loaded: %s%s%s' % (linesLoadedCt, CRT, CRT))
@@ -885,6 +950,13 @@ def writeQCReport():
     if len(unknownAlleleTypeList):
          fpQC.write(string.join(unknownAlleleTypeList))
     fpQC.write('Total: %s' % len(unknownAlleleTypeList)) 
+
+    fpQC.write('%s%s7.2.A1 Allele Subtype not in Translated Set%s%s' % (CRT, CRT, CRT, CRT))
+    fpQC.write('Line#%sInput Line%s' % (TAB, CRT))
+    fpQC.write('_____________________________________________________________%s' % CRT)
+    if len(unknownSubTypeList):
+         fpQC.write(string.join(unknownSubTypeList))
+    fpQC.write('Total: %s' % len(unknownSubTypeList))
 
     fpQC.write('%s%s7.2.C1 MGI Allele ID present, No MGI Allele Match%s%s' % (CRT, CRT, CRT, CRT))
     fpQC.write('Line#%sObjectType%sInput Line%s' % (TAB, TAB, CRT))
@@ -1022,6 +1094,10 @@ if writeQCReport() != 0:
     closeFiles()
     sys.exit(1)
 
-closeFiles()
+if closeFiles() != 0:
+    sys.exit(1)
+
+db.useOneConnection(0)
+
 sys.exit(0)
 
