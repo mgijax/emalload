@@ -314,16 +314,17 @@ def initialize():
 	
 	# map the allele to each colony ID and create lookup
 	for c in colonyIDList:
-	    if c not in colonyToAlleleDict:
-		colonyToAlleleDict[c] = []
-		colonyToAlleleDict[c].append(allele)
+	    cLower = string.lower(c)
+	    if cLower not in colonyToAlleleDict:
+		colonyToAlleleDict[cLower] = []
+		colonyToAlleleDict[cLower].append(allele)
 	    else: # this colony ID is assoc w/>1 allele (or there is a dupe)
 		symbolList = []
-		alleles =  colonyToAlleleDict[c]
+		alleles =  colonyToAlleleDict[cLower]
 		for a in alleles:
 		    symbolList.append(a.asym)
 		if alleleSymbol not in symbolList: # don't add duplicate alleles
-		    colonyToAlleleDict[c].append(allele)
+		    colonyToAlleleDict[cLower].append(allele)
 
     # Query for alleles with colony IDs
     results = db.sql('''select n._Object_key as alleleKey, nc.note
@@ -387,7 +388,7 @@ def initialize():
 
     # Query for strains
     results = db.sql('''select strain from PRB_Strain
-	where standard = 1 and private = 0''', 'auto')
+	where private = 0''', 'auto')
     for r in results:
 	strainList.append(r['strain'])
 
@@ -695,12 +696,12 @@ def createAlleleFile():
 		    dbColonyIDList = []
 		    cidError = 0 # assume there's no error
 		    if dbA.cid != '':
-			dbColonyIDList.append(dbA.cid)
+			dbColonyIDList.append(string.lower(dbA.cid)) # for lower case compare
 		    print 'dbColonyIDList: %s' % dbColonyIDList
 		    print 'IncColonyID: %s' % colonyID
 
 		    # Requirement 7.2.D4a Allele ID match, Colony ID Mismatch
-		    if dbColonyIDList != [] and colonyID not in dbColonyIDList:
+		    if dbColonyIDList != [] and string.lower(colonyID) not in dbColonyIDList:
 			alleleIdMatchColonyIDMismatchList.append('%s%s%s%s%s%s%s%s%s' % (lineNum, TAB, alleleID, TAB, dbA.asym, TAB, dbA.cid, TAB, line))
 			hasError = 1
 			cidError = 1
@@ -708,9 +709,9 @@ def createAlleleFile():
 		    # Requirement 7.2.D4b Colony ID matches MULTIPLE  alleles in the database
 		    # get the set of allele(s) (0..n) associated with incoming cid
 		    # if there are multiple alleles in the set report
-		    if colonyID in colonyToAlleleDict:
+		    if string.lower(colonyID) in colonyToAlleleDict:
 			print '%s in colonyToAlleleDict' % colonyID
-			allelesByCidList = colonyToAlleleDict[colonyID]
+			allelesByCidList = colonyToAlleleDict[string.lower(colonyID)]
 			if len(allelesByCidList) > 1:
 			    for aByCid in allelesByCidList:
 				alleleIdMatchColonyIdMatchToMultiList.append('%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s' % (lineNum, TAB, alleleID, TAB, dbA.asym, TAB, dbA.cid, TAB, aByCid.aid, TAB, aByCid.asym, TAB, aByCid.at, TAB, aByCid.cid, TAB, line))
@@ -749,8 +750,8 @@ def createAlleleFile():
 
 	    # BEGIN COLONY ID MATCH 7.2.E
 	    print '  #### Allele ID not in input, colonyID is: %s' % colonyID
-	    if colonyID in colonyToAlleleDict: 
-	        alleleList = colonyToAlleleDict[colonyID]
+	    if string.lower(colonyID) in colonyToAlleleDict: 
+	        alleleList = colonyToAlleleDict[string.lower(colonyID)]
 		# Requirement 7.2.F1 Colony ID Matches Multiple Alleles in MGI
 		if len(alleleList) > 1:
 		    for dbA in alleleList:
@@ -1056,13 +1057,6 @@ def writeQCReport():
          fpQC.write(string.join(symbolMatchMultiAlleleList))
     fpQC.write('Total: %s' % len(symbolMatchMultiAlleleList))
 
-    fpQC.write('%s%s7.2.I No Allele Match, Lab Code not Present%s%s' % (CRT, CRT, CRT, CRT))
-    fpQC.write('Line#%sLab Code%sInput Line%s' % (TAB, TAB, CRT))
-    fpQC.write('_____________________________________________________________%s' % CRT)
-    if len(labCodeNotInMgiList):
-        fpQC.write(string.join(labCodeNotInMgiList, CRT))
-    fpQC.write('Total: %s' % len(labCodeNotInMgiList))
-
     fpQC.write('%s%s7.2.H4 CID added to Allele where Allele ID was Matched%s%s' % (CRT, CRT, CRT, CRT))
     fpQC.write('Line#%sAllele ID%sAllele Symbol%sColony ID%sInput Line%s' % (TAB, TAB, TAB, TAB, CRT))
     fpQC.write('_____________________________________________________________%s' % CRT)
@@ -1076,6 +1070,13 @@ def writeQCReport():
     if len(addCidSymbolMatchList):
          fpQC.write(string.join(addCidSymbolMatchList))
     fpQC.write('Total: %s' % len(addCidSymbolMatchList))
+
+    fpQC.write('%s%s7.2.I No Allele Match, Lab Code not Present%s%s' % (CRT, CRT, CRT, CRT))
+    fpQC.write('Line#%sLab Code%sInput Line%s' % (TAB, TAB, CRT))
+    fpQC.write('_____________________________________________________________%s' % CRT)
+    if len(labCodeNotInMgiList):
+        fpQC.write(string.join(labCodeNotInMgiList, CRT))
+    fpQC.write('Total: %s' % len(labCodeNotInMgiList))
 
     return 0
 
