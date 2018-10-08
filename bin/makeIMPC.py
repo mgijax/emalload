@@ -773,7 +773,7 @@ def createAlleleFile():
 		    # calculated allele symbol match
 		    # Requirement 7.2.F2 Marker ID check
 		    if markerID != dbA.mid:
-			cidMatchMarkerIdMismatchList.append( '%s%s%s%s%s%s%s%s%s%s%s' % \
+			cidMatchMarkerIdMismatchList.append( '%s%s%s%s%s%s%s' % \
 			    (lineNum, TAB, dbA.aid, TAB, dbA.asym, TAB, line))
 			hasError = 1
 		    # Requirement 7.2.F2 Allele superscript check
@@ -849,7 +849,19 @@ def createAlleleFile():
 
 		# else no results, so create allele if labCode in DB
 
-	# Requirement 7.2.I
+	# if we've found the allele in MGI count it and go to next line
+	if alleleFound:
+	    allelesFoundCt +=1
+	    continue
+
+	# if we have not found the allele in MGI, but we have errors, count
+	# and continue
+	elif hasError:
+	    linesSkippedCt += 1
+	    continue  
+
+	# Requirement 7.2.I So, we have a new allele; check the lab code in 
+	# the superscript to make sure it is in the Cell Line Lab Code vocab
 	labName = ''
 	labCode = findLabCode(alleleSuperScript)
 	print '  #### checking lab code: %s' % labCode
@@ -861,13 +873,12 @@ def createAlleleFile():
 	#
 	# If no errors write out to allele file
 	#
-	if hasError == 1: # count the lines in the input that are skipped
+	if hasError == 1: # error in the lab code
 	    linesSkippedCt += 1
-	elif alleleFound == 1:
-	    allelesFoundCt +=1
 	else:
 	    linesLoadedCt += 1
 	    print '  #### No allele identified in DB and no errors; translate stuff and create allele'
+
 	    # translate allele type. The key is the pipe-delim IMPC alleleType
 	    # and subType, value is pipe-delim MGI alleleType and subType
 	    # impc key and mgi value may not have a subtype - thefore no pipe
@@ -924,7 +935,7 @@ def writeQCReport():
 	fpQC.write(string.join(missingRequiredValueList, CRT))
     fpQC.write('Total: %s' % len(missingRequiredValueList))
 
-    fpQC.write('%s%s7.2.C1 MGI Allele ID present, No MGI Allele Match%s%s' % (CRT, CRT, CRT, CRT))
+    fpQC.write('%s%s7.2.A1 MGI Marker ID not in MGI%s%s' % (CRT, CRT, CRT, CRT))
     fpQC.write('Line#%sInput Line%s' % (TAB, CRT))
     fpQC.write('_____________________________________________________________%s' % CRT)
     if len(markerIdNotInMgiList):
@@ -966,7 +977,7 @@ def writeQCReport():
          fpQC.write(string.join(alleleIdNotInMGIList))
     fpQC.write('Total: %s' % len(alleleIdNotInMGIList))
 
-    fpQC.write('%s%s7.2.D3 Allele ID Match, Allele Status Discrepancy"%s%s' % (CRT, CRT, CRT, CRT))
+    fpQC.write('%s%s7.2.D3 Allele ID Match, Allele Status Discrepancy%s%s' % (CRT, CRT, CRT, CRT))
     fpQC.write('Line#%sAllele Status%sInput Line%s' % (TAB, TAB, CRT))
     fpQC.write('_____________________________________________________________%s' % CRT)
     if len(alleleIdMatchAlleleStatusDiscrepList):
