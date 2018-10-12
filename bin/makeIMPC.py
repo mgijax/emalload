@@ -756,7 +756,7 @@ def createAlleleFile():
 		if len(alleleList) > 1:
 		    for dbA in alleleList:
 			# report multiple alleles for a colony ID
-			cidMatchToMultiList.append('%s%s%s%s%s%s%s%s%s%s%s%s%s%s' % (lineNum, TAB, dbA.aid, TAB, dbA.asym, TAB, line, CRT))
+			cidMatchToMultiList.append('%s%s%s%s%s%s%s%s' % (lineNum, TAB, dbA.aid, TAB, dbA.asym, TAB, line, CRT))
 			hasError = 1
 			print '  ###  multiple alleles for colony ID, skip remaining checks'
 			linesSkippedCt += 1
