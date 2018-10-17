@@ -223,6 +223,7 @@ class Allele:
 	    alleleType,		    # string - allele type
             markerID,               # string - marker MGI ID
 	    markerSymbol,	    # string - marker symbol
+	    markerKey,              # integer - marker primary key
 	    colonyID):		    # string - pipe delim colony ID string
         self.aid = alleleID
         self.asym = alleleSymbol
@@ -230,9 +231,10 @@ class Allele:
 	self.at = alleleType
         self.mid = markerID
 	self.ms = markerSymbol
+        self.mk = markerKey
 	self.cid = colonyID
     def toString(this):
-	return '%s, %s, %s, %s, %s, %s' % (this.aid, this.asym, this.ast, this.mid, this.ms, this.cid)
+	return '%s, %s, %s, %s, %s, %s, %s' % (this.aid, this.asym, this.ast, this.mid, this.ms, this.mk, this.cid)
 
 def initialize():
     # Purpose: create lookups, open files
@@ -279,8 +281,10 @@ def initialize():
 	sys.exit(1)
 
     # Query for IKMC Allele Colony Name - there are multi per allele
-    results = db.sql('''select distinct nc.note as cidNote, a.symbol as alleleSymbol, t.term as alleleStatus, 
-	    t2.term as alleleType, m.symbol as markerSymbol, a1.accid as alleleID, a2.accid as markerID, 
+    results = db.sql('''select distinct nc.note as cidNote, 
+	    a.symbol as alleleSymbol, t.term as alleleStatus, 
+	    t2.term as alleleType, m.symbol as markerSymbol, m._Marker_key,
+	    a1.accid as alleleID, a2.accid as markerID, 
 	    a1.preferred as allelePref, a2.preferred as markerPref
 	from MGI_Note n, MGI_NoteChunk nc, ALL_Allele a, MRK_Marker m, ACC_Accession a1, ACC_Accession a2, 
 	    VOC_Term t, VOC_Term t2
@@ -307,9 +311,10 @@ def initialize():
 	alleleType = r['alleleType']
         alleleID  = r['alleleID']
 	markerSymbol = r['markerSymbol']
+	markerKey = r['_Marker_key']
         markerID = r['markerID']
         # create allele object
-        allele = Allele(alleleID, alleleSymbol, alleleStatus, alleleType, markerID, markerSymbol, colonyIDString)
+        allele = Allele(alleleID, alleleSymbol, alleleStatus, alleleType, markerID, markerSymbol, markerKey, colonyIDString)
 	colonyIDList = string.split(colonyIDString, '|')
 	
 	# map the allele to each colony ID and create lookup
@@ -337,7 +342,7 @@ def initialize():
     # Query for alleles and create lookup
     results = db.sql('''select a._Allele_key, a.symbol as alleleSymbol, 
 	    t.term as alleleStatus, t2.term as alleleType, a1.accid as alleleID, 
-	    a2.accid as markerID, m.symbol as markerSymbol
+	    a2.accid as markerID, m.symbol as markerSymbol, m._Marker_key
 	from ALL_Allele a,  ACC_Accession a1, ACC_Accession a2, MRK_Marker m,
 	    VOC_Term t, VOC_Term t2
 	where a._Allele_Status_key = t._Term_key
@@ -359,11 +364,12 @@ def initialize():
 	alleleType = r['alleleType']
 	markerID = r['markerID']
 	markerSymbol = r['markerSymbol']
+	markerKey = r['_Marker_key']
 	colonyID = ''
 	if alleleKey in colonyDict:
 	    colonyID = colonyDict[alleleKey]
 	# create allele object
-	allele = Allele(alleleID, alleleSymbol, alleleStatus, alleleType, markerID, markerSymbol, colonyID)
+	allele = Allele(alleleID, alleleSymbol, alleleStatus, alleleType, markerID, markerSymbol, markerKey, colonyID)
 	alleleBySymbolDict[alleleSymbol] = allele
 	alleleByIDDict[alleleID] = allele
 
@@ -381,8 +387,7 @@ def initialize():
 	and m._Marker_key = a._Object_key
 	and a._MGIType_key = 2
 	and a._LogicalDB_key = 1
-	and a.prefixPart = 'MGI:'
-	and a.preferred = 1''', 'auto')
+	and a.prefixPart = 'MGI:' ''', 'auto')
     for r in results:
 	markerDict[r['accid']] = '%s|%s' % (r['name'], r['symbol'])
 
@@ -618,8 +623,8 @@ def createAlleleFile():
 
 	# Requirement 7.2A1 col2
         if markerID not in markerDict:  
-            markerIdNotInMgiList.append('%s%s%s' % (lineNum, TAB, line))
-            hasError = 1
+	    markerIdNotInMgiList.append('%s%s%s' % (lineNum, TAB, line))
+	    hasError = 1
 
 	# Requirement 7.2A1 col5
 	if strain not in strainList:
@@ -642,7 +647,6 @@ def createAlleleFile():
 	if alleleSubType != '' and string.lower(alleleSubType) not in impcSubTypeList:
 	    unknownSubTypeList.append('%s%s%s' % (lineNum, TAB, line))
             hasError = 1
-
 	if hasError: # skip to next line if any of the above checks fails
 	    print '  ### unexpected data in input file, skip remaining QC'
 	    linesSkippedCt += 1
@@ -674,11 +678,24 @@ def createAlleleFile():
 			(lineNum, TAB, dbA.ast, TAB, line))
                     hasError = 1
 		else:   
-		    # Requirement 7.2.D1 Marker ID check
-		    if markerID != dbA.mid:
-		        alleleIdMatchMarkerIdMismatchList.append( '%s%s%s%s%s%s%s%s%s%s%s' % \
-			    (lineNum, TAB, alleleID, TAB, calcAlleleSymbol, TAB, dbA.mid, TAB, dbA.ms, TAB, line))
-			hasError = 1
+		    # Requirement 7.2.D1 Marker ID check, 2ndary OK
+		    if markerID != dbA.mid: # check to see if 2ndary
+			print 'markerID: %s dbID: %s' % (markerID, dbA.mid)
+                        results = db.sql('''select accid
+                                from ACC_Accession
+                                where _MGIType_key = 2
+                                and _LogicalDB_key = 1
+                                and _Object_key = %s ''' % dbA.mk, 'auto')
+                        isSecondary = 0
+                        for r in results:
+                            print 'dbAccID: %s' %  r['accid']
+                            if markerID == r['accid']:
+                                isSecondary = 1
+                                break
+                        if not isSecondary:
+			    alleleIdMatchMarkerIdMismatchList.append( '%s%s%s%s%s%s%s%s%s%s%s' % \
+				(lineNum, TAB, alleleID, TAB, calcAlleleSymbol, TAB, dbA.mid, TAB, dbA.ms, TAB, line))
+			    hasError = 1
 		    # Requirement 7.2.D2 Allele symbol check
 		    print 'alleleSuperScript: %s' % alleleSuperScript
 		    print 'dbAlleleSymbol: %s' % dbA.asym
