@@ -1,0 +1,15 @@
+#!/bin/csh -f
+
+#
+# default configuration file
+#
+
+source ${NOTELOAD}/Configuration
+
+setenv NOTEMODE         incremental
+setenv NOTEDATADIR      ${DATALOADSOUTPUT}/mgi/emalload/impc/output
+setenv NOTEINPUTDIR     ${NOTEDATADIR}
+setenv NOTEINPUTFILE    ${NOTEINPUTDIR}/cid_noteload.txt
+setenv NOTELOG          ${DATALOADSOUTPUT}/mgi/emalload/impc/logs/cid_noteload.log
+setenv NOTETYPE         "IKMC Allele Colony Name"
+setenv NOTEOBJECTTYPE   Allele
