@@ -7,6 +7,7 @@ CHANGES: TR12115 - Michelle testing
 3) reorder QC output I after all H
 4) Alleles in MGI being reported in 7.2.I No Allele Match, Lab Code not Present
     moved the test for allelesFound to proper place.
+5) bug -allow 2ndary IDs to resolve; don't kick out/report
 
 TAG: emalload-6-0-12-3
 DATE: 10/01/2018
