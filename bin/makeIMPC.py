@@ -907,7 +907,10 @@ def createAlleleFile():
 	    # and subType, value is pipe-delim MGI alleleType and subType
 	    # impc key and mgi value may not have a subtype - thefore no pipe
 	    # mgi alleleType and subType may be multi-valued ';' delimited
-	    impcKey = '%s|%s' % (string.lower(alleleType), string.lower(alleleSubType))
+	    if alleleSubType == '':
+		impcKey = string.lower(alleleType)
+	    else:
+		impcKey = '%s|%s' % (string.lower(alleleType), string.lower(alleleSubType))
 	    mgiValue = alleleTypeTransDict[impcKey]
 	    print 'impcKey: %s mgiValue: %s' % (impcKey, mgiValue)
 
