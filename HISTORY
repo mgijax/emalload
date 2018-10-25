@@ -8,6 +8,9 @@ CHANGES: TR12115 - Michelle testing
 4) Alleles in MGI being reported in 7.2.I No Allele Match, Lab Code not Present
     moved the test for allelesFound to proper place.
 5) bug -allow 2ndary IDs to resolve; don't kick out/report
+6) added noteload.config.default
+7) makeIMPC.py - add new report for dupes in the input
+8) makeAllele.py - add molecular note
 
 TAG: emalload-6-0-12-3
 DATE: 10/01/2018

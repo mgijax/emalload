@@ -87,8 +87,6 @@ import sourceloadlib
 #
 # from configuration file
 #
-#user = os.getenv('MGD_DBUSER')
-#passwordFileName = os.getenv('MGD_DBPASSWORDFILE')
 inputFileName = os.getenv('ALLELE_FILE')
 outputDir = os.getenv('OUTPUTDIR')
 BCP_COMMAND = os.getenv('PG_DBUTILS') + '/bin/bcpin.csh'
@@ -116,6 +114,10 @@ accTable = 'ACC_Accession'
 noteTable = 'MGI_Note'
 noteChunkTable = 'MGI_NoteChunk'
 annotTable = 'VOC_Annot'
+
+# reference types
+origRefTypeKey = 1011 # Original
+molRefTypeKey = 1012  # Molecular
 
 alleleFileName = outputDir + '/' + alleleTable + '.bcp'
 mutationFileName = outputDir + '/' + mutationTable + '.bcp'
@@ -479,13 +481,19 @@ def processFile():
 	    fpMutationFile.write('%s|%s|%s|%s\n' \
 		% (alleleKey, mutationKey, loaddate, loaddate))
 
-	# reference association
-	refAssocTypeKey = 1011 # Original
+	# reference associations
 
+	# Original
 	fpRefFile.write('%s|%s|%s|%s|%s|%s|%s|%s|%s\n' \
-	    % (refAssocKey, refKey, alleleKey, mgiTypeKey, refAssocTypeKey, \
+	    % (refAssocKey, refKey, alleleKey, mgiTypeKey, origRefTypeKey, \
 	       		createdByKey, createdByKey, loaddate, loaddate))
 	refAssocKey = refAssocKey + 1
+
+	# Molecular
+	fpRefFile.write('%s|%s|%s|%s|%s|%s|%s|%s|%s\n' \
+            % (refAssocKey, refKey, alleleKey, mgiTypeKey, molRefTypeKey, \
+                        createdByKey, createdByKey, loaddate, loaddate))
+        refAssocKey = refAssocKey + 1
 
 	# allele subtype
 	for subTypeKey in subTypeKeyList:
