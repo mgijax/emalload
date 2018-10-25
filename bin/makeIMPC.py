@@ -182,6 +182,14 @@ allelesFoundCt = 0
 # current line number - used for Total count in reporting
 lineNum = 0
 
+# current set of alleles seen in the input, this is the calculated symbol
+# using marker symbol and allele subscript from the input
+# key = calculated symbol, value = list of lists
+# each member of list represents one line from input
+# inner list as three parts
+# 1. alleleFile line, 2. input line number, 3. input line
+calcAlleleDict = {}
+
 #
 # QC lists for reporting errors
 #
@@ -206,6 +214,7 @@ cidMatchAlleleStatusDiscrepList = []
 symbolMatchAlleleStatusDiscrepList = []		
 symbolMatchColonyIdMismatchList = []		
 symbolMatchMultiAlleleList  = []	
+dupeAlleleInInputList = []
 
 # not an error, just info for testing, maybe curators would like to see too
 addCidSymbolMatchList = []
@@ -249,7 +258,7 @@ def initialize():
     global transmissionState, alleleCollection, strainList
     global colonyToAlleleDict, alleleBySymbolDict, labCodeDict, markerDict
     global colonyDict, host, alleleTypeTransDict, impcAlleleTypeList
-    global impcSubTypeList
+    global impcSubTypeList, calcAlleleDict
 
     db.useOneConnection(1)
 
@@ -562,7 +571,7 @@ def createAlleleFile():
     global alleleIdMatchColonyIdMatchToMultiList
     global alleleIdMatchColonyIdMatchToDiffAlleleList
     global symbolMatchAlleleStatusDiscrepList, symbolMatchColonyIdMismatchList
-    global symbolMatchMultiAlleleList
+    global symbolMatchMultiAlleleList, calcAlleleDict
     global addCidSymbolMatchList, addCidAlleleIDMatchList
     global linesSkippedCt, linesLoadedCt, allelesFoundCt, lineNum
 
@@ -740,7 +749,6 @@ def createAlleleFile():
 				alleleIdMatchColonyIdMatchToDiffAlleleList.append('%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s' % (lineNum, TAB, alleleID, TAB, dbA.asym, TAB, dbA.cid, TAB, aByCid.aid, TAB, aByCid.asym, TAB, aByCid.at, TAB, aByCid.cid, TAB, line))
 				hasError = 1
 				cidError = 1
-
 		    if hasError == 0 and cidError == 0:
 			alleleFound = 1
 			if dbColonyIDList == []:
@@ -888,12 +896,11 @@ def createAlleleFile():
 	    hasError = 1
 	
 	#
-	# If no errors write out to allele file
+	# If no errors write out to dictionary of lines
 	#
 	if hasError == 1: # error in the lab code
 	    linesSkippedCt += 1
 	else:
-	    linesLoadedCt += 1
 	    print '  #### No allele identified in DB and no errors; translate stuff and create allele'
 
 	    # translate allele type. The key is the pipe-delim IMPC alleleType
@@ -928,8 +935,22 @@ def createAlleleFile():
 
 	    # calculate allele name
 	    alleleName = alleleNameTemplate % (markerName, sequenceNum, labName)
+	    if calcAlleleSymbol not in calcAlleleDict:
+		calcAlleleDict[calcAlleleSymbol] = []
 
-	    fpAllele.write('%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s' % (markerID, TAB, markerSymbol, TAB, mgiAlleleType, TAB, alleleDescription, TAB, colonyID, TAB, strain, TAB, calcAlleleSymbol, TAB, alleleName, TAB, inHeritMode, TAB, alleleClass, TAB, mgiSubType, TAB, alleleStatus, TAB, transmissionState, TAB, alleleCollection, TAB, jNumber, TAB, createdBy, CRT))
+	    # the line we want to write to the allele file if no dupes
+	    alleleLine = '%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s' % (markerID, TAB, markerSymbol, TAB, mgiAlleleType, TAB, alleleDescription, TAB, colonyID, TAB, strain, TAB, calcAlleleSymbol, TAB, alleleName, TAB, inHeritMode, TAB, alleleClass, TAB, mgiSubType, TAB, alleleStatus, TAB, transmissionState, TAB, alleleCollection, TAB, jNumber, TAB, createdBy, CRT)
+	    calcAlleleDict[calcAlleleSymbol].append([alleleLine, lineNum, line])
+
+    for key in calcAlleleDict:
+	if len(calcAlleleDict[key]) > 1: # dupe in input
+	    print '  ### Dupe alleles in input'
+	    print calcAlleleDict[key]
+	    for l in calcAlleleDict[key]:
+		dupeAlleleInInputList.append('%s%s%s%s' % (l[1], TAB, l[2], CRT))
+	else:
+	    linesLoadedCt += 1
+	    fpAllele.write(calcAlleleDict[key][0][0])
 
     return 0
 
@@ -1105,6 +1126,13 @@ def writeQCReport():
     if len(labCodeNotInMgiList):
         fpQC.write(string.join(labCodeNotInMgiList, CRT))
     fpQC.write('Total: %s' % len(labCodeNotInMgiList))
+    
+    fpQC.write('%s%sDuplicate Allele in Input%s%s' % (CRT, CRT, CRT, CRT))
+    fpQC.write('Line#%sInput Line%s' % (TAB, CRT))
+    fpQC.write('_____________________________________________________________%s' % CRT)
+    if len(dupeAlleleInInputList):
+        fpQC.write(string.join(dupeAlleleInInputList, CRT))
+    fpQC.write('Total: %s' % len(dupeAlleleInInputList))
 
     return 0
 
