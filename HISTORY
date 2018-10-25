@@ -9,7 +9,8 @@ CHANGES: TR12115 - Michelle testing
     moved the test for allelesFound to proper place.
 5) bug -allow 2ndary IDs to resolve; don't kick out/report
 6) added noteload.config.default
-7) makeIMPC.py - add new report for dupes in the input
+7) makeIMPC.py - add new report for dupes in the input, correction for mapping
+	of alleletype with no subtype
 8) makeAllele.py - add molecular note
 
 TAG: emalload-6-0-12-3
