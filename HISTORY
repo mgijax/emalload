@@ -12,6 +12,7 @@ CHANGES: TR12115 - Michelle testing
 7) makeIMPC.py - add new report for dupes in the input, correction for mapping
 	of alleletype with no subtype
 8) makeAllele.py - add molecular note
+9) reconfig impc.config transmission state to Not Applicable (it was Not Specified'
 
 TAG: emalload-6-0-12-3
 DATE: 10/01/2018
