@@ -168,7 +168,7 @@ strainList = []
 
 # template for creating allelel name for new alleles
 # marker name, sequenceNum, lab code name
-alleleNameTemplate = '%s; endonuclease-mediated mutation %s, %s'
+alleleNameTemplate = 'endonuclease-mediated mutation %s, %s'
 
 # Total number of input lines skipped because of discrepancies
 linesLoadedCt = 0
@@ -937,7 +937,7 @@ def createAlleleFile():
 	    labName = labCodeDict[labCode]
 
 	    # calculate allele name
-	    alleleName = alleleNameTemplate % (markerName, sequenceNum, labName)
+	    alleleName = alleleNameTemplate % (sequenceNum, labName)
 	    if calcAlleleSymbol not in calcAlleleDict:
 		calcAlleleDict[calcAlleleSymbol] = []
 
