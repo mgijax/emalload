@@ -1,7 +1,7 @@
-TAG: emalload-6-0-12-
-DATE:
+TAG: emalload-6-0-13-1
+DATE: 11/02/2018
 STAFF: sc
-CHANGES: TR12115 - Michelle testing
+CHANGES: TR12115 - testing
 1) LC colony ID compare (some input cid case does not match db)
 2) remove standard = true from allele query
 3) reorder QC output I after all H
