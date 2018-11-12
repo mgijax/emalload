@@ -1,3 +1,9 @@
+TAG: emalload-6-0-13-2
+DATE: 11/12/2018
+STAFF: sc
+CHANGES: TR12115 - remove reporting of cids added to existing alleles
+	this was just for testing
+
 TAG: emalload-6-0-13-1
 DATE: 11/02/2018
 STAFF: sc

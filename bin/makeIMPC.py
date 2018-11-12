@@ -216,10 +216,6 @@ symbolMatchColonyIdMismatchList = []
 symbolMatchMultiAlleleList  = []	
 dupeAlleleInInputList = []
 
-# not an error, just info for testing, maybe curators would like to see too
-addCidSymbolMatchList = []
-addCidAlleleIDMatchList = []
-
 class Allele:
     #
     # Is: data object for a Allele
@@ -572,7 +568,6 @@ def createAlleleFile():
     global alleleIdMatchColonyIdMatchToDiffAlleleList
     global symbolMatchAlleleStatusDiscrepList, symbolMatchColonyIdMismatchList
     global symbolMatchMultiAlleleList, calcAlleleDict
-    global addCidSymbolMatchList, addCidAlleleIDMatchList
     global linesSkippedCt, linesLoadedCt, allelesFoundCt, lineNum
 
     header = fpIMPC.readline()
@@ -755,9 +750,6 @@ def createAlleleFile():
 			    # Requirement 7.2.D4 if no error and no cid in the database, add a 
 			    # new note to the allele
 			    fpNoteload.write('%s%s%s%s' % (alleleID, TAB, colonyID, CRT))
-			    addCidAlleleIDMatchList.append('%s%s%s%s%s%s%s%s%s%s%s' % \
-				   (lineNum, TAB, alleleID, TAB, calcAlleleSymbol, TAB, colonyID, TAB, colonyID, TAB, line))
-
 
 	    else: # Requirement 7.2.C1 Allele ID not in MGI OR matches different object type
 		print 'Allele ID not in MGI OR matches a different object type'
@@ -856,8 +848,6 @@ def createAlleleFile():
 		    if symbolError == 0 and hasError == 0:
 			alleleFound = 1
 			fpNoteload.write('%s%s%s%s' % (aID, TAB, colonyID, CRT))
-			addCidSymbolMatchList.append('%s%s%s%s%s%s%s%s%s%s%s' % \
-			    (lineNum, TAB, aID, TAB, symbol, TAB, colonyID, TAB, colonyID, TAB, line))
 
 		# Requirement 7.2.H3 check for multiple (duplicate) alleles in the database
 		#else: # len(results) > 1:
@@ -1108,20 +1098,6 @@ def writeQCReport():
     if len(symbolMatchMultiAlleleList):
          fpQC.write(string.join(symbolMatchMultiAlleleList))
     fpQC.write('Total: %s' % len(symbolMatchMultiAlleleList))
-
-    fpQC.write('%s%s7.2.H4 CID added to Allele where Allele ID was Matched%s%s' % (CRT, CRT, CRT, CRT))
-    fpQC.write('Line#%sAllele ID%sAllele Symbol%sColony ID%sInput Line%s' % (TAB, TAB, TAB, TAB, CRT))
-    fpQC.write('_____________________________________________________________%s' % CRT)
-    if len(addCidAlleleIDMatchList):
-         fpQC.write(string.join(addCidAlleleIDMatchList))
-    fpQC.write('Total: %s' % len(addCidAlleleIDMatchList))
-
-    fpQC.write('%s%s7.2.H4 CID added to Allele where Symbol was Matched%s%s' % (CRT, CRT, CRT, CRT))
-    fpQC.write('Line#%sAllele ID%sAllele Symbol%sColony ID%sInput Line%s' % (TAB, TAB, TAB, TAB, CRT))
-    fpQC.write('_____________________________________________________________%s' % CRT)
-    if len(addCidSymbolMatchList):
-         fpQC.write(string.join(addCidSymbolMatchList))
-    fpQC.write('Total: %s' % len(addCidSymbolMatchList))
 
     fpQC.write('%s%s7.2.I No Allele Match, Lab Code not Present%s%s' % (CRT, CRT, CRT, CRT))
     fpQC.write('Line#%sLab Code%sInput Line%s' % (TAB, TAB, CRT))
