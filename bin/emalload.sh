@@ -284,7 +284,7 @@ cp -p ${SOURCE_INPUT_FILE} ${ARCHIVEDIR}/${ARC_FILE}
 #
 # Touch the "lastrun" file to note when the load was run.
 #
-#touch ${LASTRUN_FILE}
+touch ${LASTRUN_FILE}
 
 #
 # run postload cleanup and email logs
