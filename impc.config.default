@@ -42,7 +42,7 @@ export FILEDIR ARCHIVEDIR LOGDIR RPTDIR OUTPUTDIR INPUTDIR
 # input/output
 SOURCE_INPUT_FILE=${DATADOWNLOADS}/www.mousephenotype.org/mgi_crispr_allele_report.tsv
 SOURCE_COPY_INPUT_FILE=${INPUTDIR}/crispr_file.txt
-#SOURCE_COPY_INPUT_FILE=${INPUTDIR}/crispr_file.txt_test
+
 ALLELE_FILE=${OUTPUTDIR}/allele_file.txt
 CID_NOTE_FILE=${OUTPUTDIR}/cid_noteload.txt
 QC_FILE=${RPTDIR}/emalload_qc.rpt
