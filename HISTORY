@@ -1,3 +1,10 @@
+TAG: emalload-6-0-13-3
+DATE: 11/12/2018
+STAFF: sc
+CHANGES: TR12115 - production tag
+impc.config.default - removed commented out test input file path
+emalload.sh - uncommented touch of lastrun file
+
 TAG: emalload-6-0-13-2
 DATE: 11/12/2018
 STAFF: sc
