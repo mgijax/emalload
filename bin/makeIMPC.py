@@ -215,6 +215,7 @@ symbolMatchAlleleStatusDiscrepList = []
 symbolMatchColonyIdMismatchList = []		
 symbolMatchMultiAlleleList  = []	
 dupeAlleleInInputList = []
+atTransKeyNotInMgiList = []
 
 class Allele:
     #
@@ -563,11 +564,11 @@ def createAlleleFile():
     global strainNotInMgiList, unknownAlleleClassList, unknownAlleleTypeList
     global unknonhwnSubTypeList, alleleIdMatchAlleleStatusDiscrepList
     global alleleIdMatchMarkerIdMismatchList, alleleIdMatchAlleleSSMismatchList
-    global alleleIdMatchColonyIDMismatchList
+    global alleleIdMatchColonyIDMismatchList 
     global alleleIdMatchColonyIdMatchToMultiList
     global alleleIdMatchColonyIdMatchToDiffAlleleList
     global symbolMatchAlleleStatusDiscrepList, symbolMatchColonyIdMismatchList
-    global symbolMatchMultiAlleleList, calcAlleleDict
+    global symbolMatchMultiAlleleList, calcAlleleDict, atTransKeyNotInMgiList
     global linesSkippedCt, linesLoadedCt, allelesFoundCt, lineNum
 
     header = fpIMPC.readline()
@@ -884,7 +885,37 @@ def createAlleleFile():
 	    labCodeNotInMgiList.append('%s%s%s%s%s' % (lineNum, TAB, labCode, TAB, line))
 	    print '  #### bad lab code, not createing allele'
 	    hasError = 1
-	
+
+	# translate allele type. The key is the pipe-delim IMPC alleleType
+	# and subType, value is pipe-delim MGI alleleType and subType
+	# impc key and mgi value may not have a subtype - thefore no pipe
+	# mgi alleleType and subType may be multi-valued ';' delimited
+	if alleleSubType == '':
+	    impcKey = string.lower(alleleType)
+	else:
+	    impcKey = '%s|%s' % (string.lower(alleleType), string.lower(alleleSubType))
+	if impcKey not in alleleTypeTransDict:
+	    atTransKeyNotInMgiList.append('%s%s%s%s%s' % (lineNum, TAB, impcKey, TAB, line))
+	    print '  #### alleleType/subType combo not in translation'
+	    hasError = 1
+	else:
+	    mgiValue = alleleTypeTransDict[impcKey]
+	    print 'impcKey: %s mgiValue: %s' % (impcKey, mgiValue)
+	    # The case where there is no subtype
+            mgiAlleleType = mgiValue
+            mgiSubType = ''
+
+            # The case where there is a subtype
+            if string.find(mgiValue, '|') != -1:
+                mgiAlleleType, mgiSubType = string.split(mgiValue, '|')
+            print 'mgiAlleletype: %s mgiSubType: %s' % ( mgiAlleleType, mgiSubType)
+
+            # both mgiAlleleType and mgiSubType can be multivalued
+            alleleTypes = string.split(mgiAlleleType, ';')
+            subTypes = string.split(mgiSubType, ';')
+            print 'alleleTypes: %s subTypes: %s' % (alleleTypes, subTypes)
+
+		
 	#
 	# If no errors write out to dictionary of lines
 	#
@@ -892,32 +923,6 @@ def createAlleleFile():
 	    linesSkippedCt += 1
 	else:
 	    print '  #### No allele identified in DB and no errors; translate stuff and create allele'
-
-	    # translate allele type. The key is the pipe-delim IMPC alleleType
-	    # and subType, value is pipe-delim MGI alleleType and subType
-	    # impc key and mgi value may not have a subtype - thefore no pipe
-	    # mgi alleleType and subType may be multi-valued ';' delimited
-	    if alleleSubType == '':
-		impcKey = string.lower(alleleType)
-	    else:
-		impcKey = '%s|%s' % (string.lower(alleleType), string.lower(alleleSubType))
-	    mgiValue = alleleTypeTransDict[impcKey]
-	    print 'impcKey: %s mgiValue: %s' % (impcKey, mgiValue)
-
-	    # The case where there is no subtype
-	    mgiAlleleType = mgiValue
-	    mgiSubType = ''
-
-	    # The case where there is a subtype
-	    if string.find(mgiValue, '|') != -1:
-		mgiAlleleType, mgiSubType = string.split(mgiValue, '|')
-	    print 'mgiAlleletype: %s mgiSubType: %s' % ( mgiAlleleType, mgiSubType)
-
-	    # both mgiAlleleType and mgiSubType can be multivalued
-            alleleTypes = string.split(mgiAlleleType, ';')
-	    subTypes = string.split(mgiSubType, ';')
-	    print 'alleleTypes: %s subTypes: %s' % (alleleTypes, subTypes)
-
 	    # get the sequencNum from the allele
 	    seqNumFinder = re.compile ( 'em(.*)\(' )
 	    match = seqNumFinder.search(alleleSuperScript)
@@ -1105,7 +1110,14 @@ def writeQCReport():
     if len(labCodeNotInMgiList):
         fpQC.write(string.join(labCodeNotInMgiList, CRT))
     fpQC.write('Total: %s' % len(labCodeNotInMgiList))
-    
+   
+    fpQC.write('%s%s IMPC Allele Type/Sub Type not in MGI translation%s%s' % (CRT, CRT, CRT, CRT))
+    fpQC.write('Line#%sIMPC alleleType|subType%sInput Line%s' % (TAB, TAB, CRT))
+    fpQC.write('_____________________________________________________________%s' % CRT)
+    if len(atTransKeyNotInMgiList):
+        fpQC.write(string.join(atTransKeyNotInMgiList, CRT))
+    fpQC.write('Total: %s' % len(atTransKeyNotInMgiList))
+ 
     fpQC.write('%s%sDuplicate Allele in Input%s%s' % (CRT, CRT, CRT, CRT))
     fpQC.write('Line#%sInput Line%s' % (TAB, CRT))
     fpQC.write('_____________________________________________________________%s' % CRT)
