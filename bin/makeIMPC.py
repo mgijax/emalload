@@ -890,6 +890,8 @@ def createAlleleFile():
 	# and subType, value is pipe-delim MGI alleleType and subType
 	# impc key and mgi value may not have a subtype - thefore no pipe
 	# mgi alleleType and subType may be multi-valued ';' delimited
+
+	# Requirement 7.2.A1g  check that the allele type/subtype 'key' has a translation
 	if alleleSubType == '':
 	    impcKey = string.lower(alleleType)
 	else:
@@ -1111,7 +1113,7 @@ def writeQCReport():
         fpQC.write(string.join(labCodeNotInMgiList, CRT))
     fpQC.write('Total: %s' % len(labCodeNotInMgiList))
    
-    fpQC.write('%s%s IMPC Allele Type/Sub Type not in MGI translation%s%s' % (CRT, CRT, CRT, CRT))
+    fpQC.write('%s%s7.2.A1g Allele (mutation) Type/Allele Subtype combination not in Translated Set%s%s' % (CRT, CRT, CRT, CRT))
     fpQC.write('Line#%sIMPC alleleType|subType%sInput Line%s' % (TAB, TAB, CRT))
     fpQC.write('_____________________________________________________________%s' % CRT)
     if len(atTransKeyNotInMgiList):
