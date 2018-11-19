@@ -116,7 +116,8 @@ hr|intra-exdel deletion=Intragenic deletion|Null/knockout
 hr|null reporter=Intragenic deletion;Insertion|Null/knockout;Reporter
 indel=Intragenic deletion;Insertion|Null/knockout
 indel|exon deletion=Intragenic deletion;Insertion|Null/knockout
-indel|indel=Intragenic deletion;Insertion|Null/knockout'
+indel|indel=Intragenic deletion;Insertion|Null/knockout
+indel|inter-exdel deletion=Intragenic deletion;Insertion|Null/knockout'
 
 export ALLELE_TYPE_TRANS
 
