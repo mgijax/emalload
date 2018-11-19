@@ -1,3 +1,9 @@
+TAG: emalload-6-0-13-4
+DATE: 11/19/2018
+STAFF: sc
+CHANGES: TR12115 - bug fix
+makeIMPC.py - report case where new IMPC allele type/subtype combo
+
 TAG: emalload-6-0-13-3
 DATE: 11/12/2018
 STAFF: sc
