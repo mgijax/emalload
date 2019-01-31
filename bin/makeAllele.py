@@ -309,7 +309,7 @@ def setPrimaryKeys():
     	where prefixPart = '%s' ''' % (mgiPrefix), 'auto')
     mgiKey = results[0]['nextKey']
 
-    results = db.sql(''' select nextval('voc_annot_seq') as maxKey ''', 'auto')
+    results = db.sql(''' select nextval('voc_annot_seq') as nextKey ''', 'auto')
     annotKey = results[0]['nextKey']
 
     return 0

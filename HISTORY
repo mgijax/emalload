@@ -1,3 +1,9 @@
+TAG: emalload-6-0-13-?
+DATE: 01/31/2019
+STAFF: lec
+CHANGES: TR12963/teleuse-to-API
+added autosequence for voc_annot
+
 TAG: emalload-6-0-13-4
 DATE: 11/19/2018
 STAFF: sc
