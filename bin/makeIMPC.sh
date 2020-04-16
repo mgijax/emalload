@@ -98,7 +98,7 @@ checkStatus ${STAT} "Copying input file"
 echo "" >> ${LOG}
 date >> ${LOG}
 echo "Create the IMPC Allele input file (makeIMPC.sh)" | tee -a ${LOG}
-./makeIMPC.py 2>&1 >> ${LOG}
+${PYTHON} ./makeIMPC.py 2>&1 >> ${LOG}
 STAT=$?
 checkStatus ${STAT} "makeIMPC.py ${CONFIG}"
 #

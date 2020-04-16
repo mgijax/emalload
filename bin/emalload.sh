@@ -158,7 +158,7 @@ checkColumns ()
     echo "" >> ${REPORT}
     echo "Lines With Missing Columns" >> ${REPORT}
     echo "--------------------------" >> ${REPORT}
-   ${EMALLOAD}/bin/checkColumns.py ${FILE} ${NUM_COLUMNS} > ${TMP_FILE2}
+    ${PYTHON} ${EMALLOAD}/bin/checkColumns.py ${FILE} ${NUM_COLUMNS} > ${TMP_FILE2}
     cat ${TMP_FILE2} >> ${REPORT}
     if [ `cat ${TMP_FILE2} | wc -l` -eq 0 ]
     then
@@ -241,7 +241,7 @@ fi
 #
 # run pre-processor to do QC and create allele input file
 #
-${PREPROCESSOR} 2>&1 >> ${LOG}
+${PYTHON} ${PREPROCESSOR} 2>&1 >> ${LOG}
 STAT=$?
 checkStatus ${STAT} "${PREPROCESSOR}"
 
@@ -267,7 +267,7 @@ fi
 #
 echo "" >> ${LOG}
 date >> ${LOG}
-./makeAllele.py  2>&1 >> ${LOG}
+${PYTHON} ./makeAllele.py  2>&1 >> ${LOG}
 STAT=$?
 checkStatus ${STAT} "makeAllele.py ${CONFIG}"
 

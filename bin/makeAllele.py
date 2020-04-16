@@ -1,5 +1,3 @@
-#!/usr/local/bin/python
-
 #
 # Program: makeAllele.py
 #
@@ -79,7 +77,6 @@
 import sys
 import os
 import db
-import string
 import mgi_utils
 import loadlib
 import sourceloadlib
@@ -93,7 +90,7 @@ BCP_COMMAND = os.getenv('PG_DBUTILS') + '/bin/bcpin.csh'
 newAlleleRptFileName = os.getenv('NEW_ALLELE_RPT')
 
 DEBUG = os.getenv('LOG_DEBUG')	# if 'true', in debug mode and  bcp files 
-				# will not be bcp-ed into the database. Default is 'false'.
+                                # will not be bcp-ed into the database. Default is 'false'.
 
 fpDiagFile = ''		# diagnostic file descriptor
 fpErrorFile = ''	# error file descriptor
@@ -144,7 +141,7 @@ mgiTypeKey = 11		# Allele
 mgiPrefix = 'MGI:'
 annotTypeKey = 1014	# Allele SubType
 qualifierKey = 1614158  # SubType annotation qualifier key (null as opposed
-			# to NOT
+                        # to NOT
 isMixed = 0	 	# allele isMixed value
 isExtinct = 0		# allele isExtinct value
 
@@ -158,7 +155,7 @@ def exit(
     # Effects: Exits with 'status'
 
     status,          # numeric exit status (integer)
-    message = None   # exit message (string)
+    message = None   # exit message (str.
     ):
 
     if message is not None:
@@ -169,8 +166,8 @@ def exit(
         fpErrorFile.write('\n\nEnd Date/Time: %s\n' % (mgi_utils.date()))
         fpDiagFile.close()
         fpErrorFile.close()
-	fpInputFile.close()
-	
+        fpInputFile.close()
+        
     except:
         pass
 
@@ -202,12 +199,12 @@ def initialize():
         fpDiagFile = open(diagFileName, 'w')
     except:
         exit(1, 'Could not open file %s\n' % diagFileName)
-		
+                
     try:
         fpErrorFile = open(errorFileName, 'w')
     except:
         exit(1, 'Could not open file %s\n' % errorFileName)
-		
+                
     try:
         fpNewAlleleRptFile = open(newAlleleRptFileName, 'w')
     except:
@@ -272,16 +269,16 @@ def closeFiles():
     # Throws: Nothing
 
     try:
-	fpAlleleFile.close()
-	fpMutationFile.close()
-	fpRefFile.close()
-	fpAccFile.close()
-	fpNoteFile.close()
-	fpNoteChunkFile.close()
-	fpAnnotFile.close()
-	fpNewAlleleRptFile.close()
+        fpAlleleFile.close()
+        fpMutationFile.close()
+        fpRefFile.close()
+        fpAccFile.close()
+        fpNoteFile.close()
+        fpNoteChunkFile.close()
+        fpAnnotFile.close()
+        fpNewAlleleRptFile.close()
     except:
-	return 1 
+        return 1 
     return 0
 
 def setPrimaryKeys():
@@ -306,7 +303,7 @@ def setPrimaryKeys():
     noteKey = results[0]['nextKey']
 
     results = db.sql('''select max(maxNumericPart) + 1 as nextKey from ACC_AccessionMax 
-    	where prefixPart = '%s' ''' % (mgiPrefix), 'auto')
+        where prefixPart = '%s' ''' % (mgiPrefix), 'auto')
     mgiKey = results[0]['nextKey']
 
     results = db.sql(''' select nextval('voc_annot_seq') as nextKey ''', 'auto')
@@ -322,7 +319,7 @@ def bcpFiles():
     # Throws: Nothing
 
     if DEBUG == 'true':
-	return 0
+        return 0
 
     closeFiles()
 
@@ -340,8 +337,8 @@ def bcpFiles():
     db.commit()
 
     for bcpCmd in [bcp1, bcp2, bcp3, bcp4, bcp5, bcp6, bcp7]:
-	fpDiagFile.write('%s\n' % bcpCmd)
-	os.system(bcpCmd)
+        fpDiagFile.write('%s\n' % bcpCmd)
+        os.system(bcpCmd)
 
     # update serialization on mgi_reference_assoc
     db.sql(''' select setval('mgi_reference_assoc_seq', (select max(_Assoc_key) + 1
@@ -370,46 +367,46 @@ def processFile():
 
         error = 0
         lineNum = lineNum + 1
-   	print '%s: %s' % (lineNum, line)
+        print('%s: %s' % (lineNum, line))
         # Split the line into tokens
         tokens = line[:-1].split('\t')
         try:
-	    markerID = tokens[0]
-	    markerSymbol = tokens[1]
-	    mutationType = tokens[2] 	# IMPC allele type
-	    description = tokens[3]
-	    colonyID = tokens[4]
-	    strainOfOrigin =  tokens[5]
-	    alleleSymbol =  tokens[6]
-	    alleleName =   tokens[7]
-	    inheritanceMode =  tokens[8]
-	    alleleType = tokens[9] 	# IMPC allele class
-	    alleleSubType  = tokens[10]
-	    alleleStatus = tokens[11]
-	    transmission = tokens[12]
-	    collection = tokens[13]
-	    jNum = tokens[14]
-	    createdBy  = tokens[15]
+            markerID = tokens[0]
+            markerSymbol = tokens[1]
+            mutationType = tokens[2] 	# IMPC allele type
+            description = tokens[3]
+            colonyID = tokens[4]
+            strainOfOrigin =  tokens[5]
+            alleleSymbol =  tokens[6]
+            alleleName =   tokens[7]
+            inheritanceMode =  tokens[8]
+            alleleType = tokens[9] 	# IMPC allele class
+            alleleSubType  = tokens[10]
+            alleleStatus = tokens[11]
+            transmission = tokens[12]
+            collection = tokens[13]
+            jNum = tokens[14]
+            createdBy  = tokens[15]
 
         except:
-	    print 'exiting with invalid line'
+            print('exiting with invalid line')
             exit(1, 'Invalid Line (%d): %s\n' % (lineNum, line))
 
-	print 'validating data and getting keys'
+        print('validating data and getting keys')
         # marker key
         markerKey = loadlib.verifyMarker(markerID, lineNum, fpErrorFile)
 
         # _vocab_key = 36 (Allele Molecular Mutation)
-	mutationList = string.split(mutationType, ';')
-	if len(mutationList) > 1:
-	   print 'mutationList: %s' % mutationList
-	mutationKeyList = []
-	for m in mutationList:
-	    mutationKey = loadlib.verifyTerm('', 36, m, lineNum, fpErrorFile)
-	    if mutationKey != 0:
-		mutationKeyList.append(mutationKey)
-	if len(mutationKeyList) > 1:
-	    print 'mutationKeyList: %s' % mutationKeyList
+        mutationList = str.split(mutationType, ';')
+        if len(mutationList) > 1:
+           print('mutationList: %s' % mutationList)
+        mutationKeyList = []
+        for m in mutationList:
+            mutationKey = loadlib.verifyTerm('', 36, m, lineNum, fpErrorFile)
+            if mutationKey != 0:
+                mutationKeyList.append(mutationKey)
+        if len(mutationKeyList) > 1:
+            print('mutationKeyList: %s' % mutationKeyList)
         # strains
         strainOfOriginKey = sourceloadlib.verifyStrain(strainOfOrigin, lineNum, fpErrorFile)
 
@@ -421,128 +418,128 @@ def processFile():
         alleleTypeKey = loadlib.verifyTerm('', 38, alleleType, lineNum, fpErrorFile)
 
         # _vocab_key = 93 (Allele Subtype)
-        subTypeList = string.split(alleleSubType, ';')
+        subTypeList = str.split(alleleSubType, ';')
         if len(subTypeList) > 1:
-           print 'subTypeList: %s' % subTypeList
+           print('subTypeList: %s' % subTypeList)
         subTypeKeyList = []
         for s in subTypeList:
-	    if s != '': # if we have a subtype, get it's key
-		subTypeKey = loadlib.verifyTerm('', 93, s, lineNum, fpErrorFile)
-		if subTypeKey != 0:
-		    subTypeKeyList.append(subTypeKey)
-	if len(subTypeKeyList) > 1:
-	    print 'subTypeKeyList: %s' % subTypeKeyList
+            if s != '': # if we have a subtype, get it's key
+                subTypeKey = loadlib.verifyTerm('', 93, s, lineNum, fpErrorFile)
+                if subTypeKey != 0:
+                    subTypeKeyList.append(subTypeKey)
+        if len(subTypeKeyList) > 1:
+            print('subTypeKeyList: %s' % subTypeKeyList)
 
         # _vocab_key = 37 (Allele Status)
         alleleStatusKey = loadlib.verifyTerm('', 37, alleleStatus, lineNum, fpErrorFile)
 
-	# _vocab_key = 61 (Allele Transmission)
+        # _vocab_key = 61 (Allele Transmission)
         transmissionKey = loadlib.verifyTerm('', 61, transmission, lineNum, fpErrorFile)
 
-	# _vocab_key = 92
-	collectionKey = loadlib.verifyTerm('', 92, collection, lineNum, fpErrorFile)
+        # _vocab_key = 92
+        collectionKey = loadlib.verifyTerm('', 92, collection, lineNum, fpErrorFile)
 
-	# _vocab_key = 73 (Marker-Allele Association Status)
-	# _term_key = 4268545 (Curated)
-	markerStatusKey = 4268545
+        # _vocab_key = 73 (Marker-Allele Association Status)
+        # _term_key = 4268545 (Curated)
+        markerStatusKey = 4268545
 
-	# reference
-	refKey = loadlib.verifyReference(jNum, lineNum, fpErrorFile)
+        # reference
+        refKey = loadlib.verifyReference(jNum, lineNum, fpErrorFile)
 
         # creator
         createdByKey = loadlib.verifyUser(createdBy, lineNum, fpErrorFile)
         if createdByKey == 0:
             continue
 
-	print 'checking for missing data'
+        print('checking for missing data')
         # if errors, continue to next record
-	# errors are stored (via loadlib) in the .error log
+        # errors are stored (via loadlib) in the .error log
         if markerKey == 0 \
-	        or mutationKeyList == [] \
-	  	or strainOfOriginKey == 0 \
+                or mutationKeyList == [] \
+                or strainOfOriginKey == 0 \
                 or inheritanceModeKey == 0 \
                 or alleleTypeKey == 0 \
                 or alleleStatusKey == 0 \
-		or transmissionKey == 0 \
-	 	or collectionKey == 0 \
-		or refKey == 0 \
-		or createdByKey == 0:
-	    print 'missing data, skipping this line'
+                or transmissionKey == 0 \
+                or collectionKey == 0 \
+                or refKey == 0 \
+                or createdByKey == 0:
+            print('missing data, skipping this line')
             continue
 
         # if no errors, process the allele
-	print 'writing to allele file'
-	# allele (isWildType = 0)
+        print('writing to allele file')
+        # allele (isWildType = 0)
         fpAlleleFile.write('%d|%s|%s|%s|%s|%s|%s|%s|%s|%s|0|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s\n' \
             % (alleleKey, markerKey, strainOfOriginKey, inheritanceModeKey, alleleTypeKey, \
-	    alleleStatusKey, transmissionKey, collectionKey, alleleSymbol, alleleName, \
-	    isExtinct, isMixed, refKey, markerStatusKey, \
-	    createdByKey, createdByKey, createdByKey, loaddate, loaddate, loaddate))
+            alleleStatusKey, transmissionKey, collectionKey, alleleSymbol, alleleName, \
+            isExtinct, isMixed, refKey, markerStatusKey, \
+            createdByKey, createdByKey, createdByKey, loaddate, loaddate, loaddate))
 
-	# molecular mutation
-	for mutationKey in mutationKeyList:
-	    fpMutationFile.write('%s|%s|%s|%s\n' \
-		% (alleleKey, mutationKey, loaddate, loaddate))
+        # molecular mutation
+        for mutationKey in mutationKeyList:
+            fpMutationFile.write('%s|%s|%s|%s\n' \
+                % (alleleKey, mutationKey, loaddate, loaddate))
 
-	# reference associations
+        # reference associations
 
-	# Original
-	fpRefFile.write('%s|%s|%s|%s|%s|%s|%s|%s|%s\n' \
-	    % (refAssocKey, refKey, alleleKey, mgiTypeKey, origRefTypeKey, \
-	       		createdByKey, createdByKey, loaddate, loaddate))
-	refAssocKey = refAssocKey + 1
+        # Original
+        fpRefFile.write('%s|%s|%s|%s|%s|%s|%s|%s|%s\n' \
+            % (refAssocKey, refKey, alleleKey, mgiTypeKey, origRefTypeKey, \
+                        createdByKey, createdByKey, loaddate, loaddate))
+        refAssocKey = refAssocKey + 1
 
-	# Molecular
-	fpRefFile.write('%s|%s|%s|%s|%s|%s|%s|%s|%s\n' \
+        # Molecular
+        fpRefFile.write('%s|%s|%s|%s|%s|%s|%s|%s|%s\n' \
             % (refAssocKey, refKey, alleleKey, mgiTypeKey, molRefTypeKey, \
                         createdByKey, createdByKey, loaddate, loaddate))
         refAssocKey = refAssocKey + 1
 
-	# allele subtype
-	for subTypeKey in subTypeKeyList:
-	    fpAnnotFile.write('%s|%s|%s|%s|%s|%s|%s\n' \
-		    % (annotKey, annotTypeKey, alleleKey, subTypeKey, \
-			    qualifierKey, loaddate, loaddate))
-	    annotKey = annotKey + 1
+        # allele subtype
+        for subTypeKey in subTypeKeyList:
+            fpAnnotFile.write('%s|%s|%s|%s|%s|%s|%s\n' \
+                    % (annotKey, annotTypeKey, alleleKey, subTypeKey, \
+                            qualifierKey, loaddate, loaddate))
+            annotKey = annotKey + 1
 
         # MGI Accession ID for the allele
-	alleleID = '%s%s' % (mgiPrefix, mgiKey)
+        alleleID = '%s%s' % (mgiPrefix, mgiKey)
         fpAccFile.write('%s|%s|%s|%s|1|%d|%d|0|1|%s|%s|%s|%s\n' \
             % (accKey, alleleID, mgiPrefix, mgiKey, alleleKey, mgiTypeKey, \
-	       createdByKey, createdByKey, loaddate, loaddate))
+               createdByKey, createdByKey, loaddate, loaddate))
 
-	# storing data in MGI_Note/MGI_NoteChunk
-	# molecular note
+        # storing data in MGI_Note/MGI_NoteChunk
+        # molecular note
 
-	fpNoteFile.write('%s|%s|%s|%s|%s|%s|%s|%s\n' \
-	    % (noteKey, alleleKey, mgiTypeKey, molecularNoteTypeKey, \
-	       createdByKey, createdByKey, loaddate, loaddate))
+        fpNoteFile.write('%s|%s|%s|%s|%s|%s|%s|%s\n' \
+            % (noteKey, alleleKey, mgiTypeKey, molecularNoteTypeKey, \
+               createdByKey, createdByKey, loaddate, loaddate))
 
-	fpNoteChunkFile.write('%s|%s|%s|%s|%s|%s|%s\n' \
-	    % (noteKey, mgiNoteSeqNum, description, createdByKey, createdByKey, loaddate, loaddate))
+        fpNoteChunkFile.write('%s|%s|%s|%s|%s|%s|%s\n' \
+            % (noteKey, mgiNoteSeqNum, description, createdByKey, createdByKey, loaddate, loaddate))
 
-	noteKey = noteKey + 1
+        noteKey = noteKey + 1
 
-	# colony ID note
-	fpNoteFile.write('%s|%s|%s|%s|%s|%s|%s|%s\n' \
-	    % (noteKey, alleleKey, mgiTypeKey, colonyIdNoteTypeKey, \
-	       createdByKey, createdByKey, loaddate, loaddate))
+        # colony ID note
+        fpNoteFile.write('%s|%s|%s|%s|%s|%s|%s|%s\n' \
+            % (noteKey, alleleKey, mgiTypeKey, colonyIdNoteTypeKey, \
+               createdByKey, createdByKey, loaddate, loaddate))
 
-	fpNoteChunkFile.write('%s|%s|%s|%s|%s|%s|%s\n' \
-	    % (noteKey, 1, colonyID, createdByKey, createdByKey, loaddate, loaddate))
+        fpNoteChunkFile.write('%s|%s|%s|%s|%s|%s|%s\n' \
+            % (noteKey, 1, colonyID, createdByKey, createdByKey, loaddate, loaddate))
 
-	noteKey = noteKey + 1
+        noteKey = noteKey + 1
 
-	# Print out a new text file and attach the new MGI Allele IDs 
-	# as the last field
+        # Print out a new text file and attach the new MGI Allele IDs 
+        # as the last field
 
-	fpNewAlleleRptFile.write('%s\t%s\t%s\t%s\t%s\t%s\n' \
-	% (mgi_utils.prvalue(alleleID), \
-	mgi_utils.prvalue(alleleSymbol), \
-	mgi_utils.prvalue(alleleName), \
-	mgi_utils.prvalue(markerID), \
-	mgi_utils.prvalue(markerSymbol), \
-	mgi_utils.prvalue(colonyID)))
+        fpNewAlleleRptFile.write('%s\t%s\t%s\t%s\t%s\t%s\n' \
+        % (mgi_utils.prvalue(alleleID), \
+        mgi_utils.prvalue(alleleSymbol), \
+        mgi_utils.prvalue(alleleName), \
+        mgi_utils.prvalue(markerID), \
+        mgi_utils.prvalue(markerSymbol), \
+        mgi_utils.prvalue(colonyID)))
 
         accKey = accKey + 1
         mgiKey = mgiKey + 1
@@ -551,10 +548,10 @@ def processFile():
     #
     # Update the AccessionMax value
     #
-    print 'DEBUG: %s' % DEBUG
+    print('DEBUG: %s' % DEBUG)
     if DEBUG == 'false':
         db.sql('select * from ACC_setMax(%d)' % (lineNum), None)
-	db.commit()
+        db.commit()
 
     return 0
 

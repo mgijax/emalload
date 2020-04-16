@@ -1,4 +1,3 @@
-#!/usr/local/bin/python
 #
 #  checkColumns.py
 ###########################################################################
@@ -36,7 +35,6 @@
 ###########################################################################
 
 
-import string
 import sys
 
 USAGE = 'Usage: checkColumns.py  inputFile numColumns'
@@ -58,7 +56,7 @@ def checkArgs ():
     global inputFile, numColumns
 
     if len(sys.argv) != 3:
-        print USAGE
+        print(USAGE)
         sys.exit(1)
 
     inputFile = sys.argv[1]
@@ -76,10 +74,10 @@ def openFile ():
     global fpInput
 
     try:
-	fpInput = open(inputFile, 'r')
+        fpInput = open(inputFile, 'r')
     except:
-	print 'Cannot open input file: ' + inputFile
-	sys.exit(1)
+        print('Cannot open input file: ' + inputFile)
+        sys.exit(1)
     return
 
 #
@@ -93,21 +91,21 @@ def checkColumns ():
     global errors
     lineNum = 1
     for line in fpInput.readlines():
-	colError = 0
-	lineNum = lineNum + 1
-   	columns = map(string.strip, string.split(line, TAB))
-	# remove newline from last column
+        colError = 0
+        lineNum = lineNum + 1
+        columns = list(map(str.strip, str.split(line, TAB)))
+        # remove newline from last column
         last = columns[-1].strip()
         columns[-1] = last
-	nc = len(columns) 
-	if nc < numColumns:
-	    errors = errors + 1
-	    colError = colError + 1
-	### start code for missing data in req columns
-	# If errors then wrong number of columns exists; so continue to next
-	if colError > 0:
-	    print 'Missing Column(s): %s' % (columns)
-	    continue
+        nc = len(columns) 
+        if nc < numColumns:
+            errors = errors + 1
+            colError = colError + 1
+        ### start code for missing data in req columns
+        # If errors then wrong number of columns exists; so continue to next
+        if colError > 0:
+            print('Missing Column(s): %s' % (columns))
+            continue
     return
 
 #
