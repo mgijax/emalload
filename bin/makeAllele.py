@@ -288,7 +288,10 @@ def setPrimaryKeys():
     # Effects: Nothing
     # Throws: Nothing
 
-    global alleleKey, refAssocKey, accKey, noteKey, mgiKey, annotKey
+    global alleleKey, refAssocKey, accKey, noteKey, mgiKey, annotKey, alleleMutationKey
+
+    results = db.sql(''' select nextval('all_allele_mutation_seq') as nextKey ''', 'auto')
+    alleleMutationKey = results[0]['nextKey']
 
     results = db.sql('select max(_Allele_key) + 1 as nextKey from ALL_Allele', 'auto')
     alleleKey = results[0]['nextKey']
@@ -347,6 +350,9 @@ def bcpFiles():
 
     # update voc_annot_seq auto-sequence
     db.sql(''' select setval('voc_annot_seq', (select max(_Annot_key) from VOC_Annot)) ''', None)
+
+    # update all_allele_mutation_seq auto-sequence
+    db.sql(''' select setval('all_allele_mutation_seq', (select max(_Assoc_key) from ALL_Allele_Mutation)) ''', None)
 
     return 0
 
@@ -478,8 +484,9 @@ def processFile():
 
         # molecular mutation
         for mutationKey in mutationKeyList:
-            fpMutationFile.write('%s|%s|%s|%s\n' \
-                % (alleleKey, mutationKey, loaddate, loaddate))
+            fpMutationFile.write('%s|%s|%s|%s|%s\n' \
+                % (alleleMutationKey, alleleKey, mutationKey, loaddate, loaddate))
+            alleleMutationKey += 1
 
         # reference associations
 
