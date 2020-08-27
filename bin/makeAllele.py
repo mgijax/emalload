@@ -133,6 +133,8 @@ accKey = 0              # ACC_Accession._Accession_key
 noteKey = 0		# MGI_Note._Note_key
 mgiKey = 0              # ACC_AccessionMax.maxNumericPart
 annotKey = 0		# VOC_Annot._Annot_key
+alleleMutationKey = 0   # ALL_Allele_Mutation._Assoc_key
+
 mgiNoteSeqNum = 1       # MGI_NoteChunk.sequenceNum
 molecularNoteTypeKey = 1021      # MGI_Note._NoteType_key for molecular note
 colonyIdNoteTypeKey = 1041   	 # MGI_Note._NoteType_key for colony id note
@@ -364,7 +366,7 @@ def processFile():
     # Throws: Nothing
 
     global alleleKey, refAssocKey, accKey, noteKey, mgiKey, annotKey
-    global alleleLookup
+    global alleleLookup, alleleMutationKey
 
     lineNum = 0
     # For each line in the input file
