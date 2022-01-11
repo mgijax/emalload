@@ -295,10 +295,10 @@ def setPrimaryKeys():
     results = db.sql(''' select nextval('all_allele_mutation_seq') as nextKey ''', 'auto')
     alleleMutationKey = results[0]['nextKey']
 
-    results = db.sql('select max(_Allele_key) + 1 as nextKey from ALL_Allele', 'auto')
+    results = db.sql(''' select nextval('all_allele_seq') as nextKey ''', 'auto')
     alleleKey = results[0]['nextKey']
 
-    results = db.sql('select max(_Assoc_key) + 1 as nextKey from MGI_Reference_Assoc', 'auto')
+    results = db.sql(''' select nextval('mgi_reference_assoc_seq') as nextKey ''', 'auto')
     refAssocKey = results[0]['nextKey']
 
     results = db.sql('select max(_Accession_key) + 1 as nextKey from ACC_Accession', 'auto')
@@ -345,16 +345,19 @@ def bcpFiles():
         fpDiagFile.write('%s\n' % bcpCmd)
         os.system(bcpCmd)
 
-    # update serialization on mgi_reference_assoc
-    db.sql(''' select setval('mgi_reference_assoc_seq', (select max(_Assoc_key) + 1
-            from MGI_Reference_Assoc)) ''', None)
-    db.commit()
+    # update all_allele_mutation_seq auto-sequence
+    db.sql(''' select setval('all_allele_mutation_seq', (select max(_Assoc_key) from ALL_Allele_Mutation)) ''', None)
+
+    # update all_allele_seq auto-sequence
+    db.sql(''' select setval('all_allele_seq', (select max(_Allele_key) from ALL_Allele)) ''', None)
+
+    # update mgi_reference_assoc auto-sequence
+    db.sql(''' select setval('mgi_reference_assoc_seq', (select max(_Assoc_key) + 1 from MGI_Reference_Assoc)) ''', None)
 
     # update voc_annot_seq auto-sequence
     db.sql(''' select setval('voc_annot_seq', (select max(_Annot_key) from VOC_Annot)) ''', None)
 
-    # update all_allele_mutation_seq auto-sequence
-    db.sql(''' select setval('all_allele_mutation_seq', (select max(_Assoc_key) from ALL_Allele_Mutation)) ''', None)
+    db.commit()
 
     return 0
 
