@@ -345,6 +345,9 @@ def bcpFiles():
     # update mgi_reference_assoc auto-sequence
     db.sql(''' select setval('mgi_reference_assoc_seq', (select max(_Assoc_key) + 1 from MGI_Reference_Assoc)) ''', None)
 
+    # update mgi_note_seq auto-sequence
+    db.sql(''' select setval('mgi_note_seq', (select max(_Note_key) from MGI_Note)) ''', None)
+
     # update voc_annot_seq auto-sequence
     db.sql(''' select setval('voc_annot_seq', (select max(_Annot_key) from VOC_Annot)) ''', None)
 
