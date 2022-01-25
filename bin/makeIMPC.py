@@ -74,6 +74,9 @@
 #      4) Close files.
 #
 #  Notes:
+#       01/25/2022    sc
+#        - wts2-767 remove mgi_notechunk, note now in mgi_note
+#
 #	09/2018		sc
 #	 - reimplementation based on new file
 #
@@ -285,15 +288,14 @@ def initialize():
         sys.exit(1)
 
     # Query for IKMC Allele Colony Name - there are multi per allele
-    results = db.sql('''select distinct nc.note as cidNote, 
+    results = db.sql('''select distinct n.note as cidNote, 
             a.symbol as alleleSymbol, t.term as alleleStatus, 
             t2.term as alleleType, m.symbol as markerSymbol, m._Marker_key,
             a1.accid as alleleID, a2.accid as markerID, 
             a1.preferred as allelePref, a2.preferred as markerPref
-        from MGI_Note n, MGI_NoteChunk nc, ALL_Allele a, MRK_Marker m, ACC_Accession a1, ACC_Accession a2, 
+        from MGI_Note n, ALL_Allele a, MRK_Marker m, ACC_Accession a1, ACC_Accession a2, 
             VOC_Term t, VOC_Term t2
         where n._NoteType_key = 1041
-        and n._Note_key = nc._Note_key
         and n._Object_key = a._Allele_key
         and a._Marker_key = m._Marker_key
         and a._Allele_Status_key = t._Term_key
@@ -336,10 +338,9 @@ def initialize():
                     colonyToAlleleDict[cLower].append(allele)
 
     # Query for alleles with colony IDs
-    results = db.sql('''select n._Object_key as alleleKey, nc.note
-        from MGI_Note n, MGI_NoteChunk nc
-        where n._NoteType_key = 1041
-        and n._Note_key = nc._Note_key''', 'auto')
+    results = db.sql('''select n._Object_key as alleleKey, n.note
+        from MGI_Note n
+        where n._NoteType_key = 1041''', 'auto')
     for r in results:
         colonyDict[r['alleleKey']] =  r['note']
  

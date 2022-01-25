@@ -42,7 +42,6 @@
 #	  MGI_Reference_Assoc
 #	  ACC_Accession
 #	  MGI_Note	(molecular and colony ID)
-#	  MGI_NoteChunk (molecular and colony ID)
 #	  VOC_Annot (allele subType)
 #
 #	Log Files
@@ -65,6 +64,9 @@
 #      5) Execute bcp
 #
 # History
+#
+# 01/25/2022    sc
+#       - wts2-767 remove mgi_notechunk, note now in mgi_note
 #
 # 09/2018	sc
 #	- TR12115 rewrite of load now that we have a 
@@ -100,7 +102,6 @@ fpMutationFile = ''	# allele mutation bcp file descriptor
 fpRefFile = ''          # reference assoc bcp file descriptor
 fpAccFile = ''          # accession bcp file descriptor
 fpNoteFile = ''		# note bcp file descriptor
-fpNoteChunkFile = ''	# note chunk bcp file descriptor
 fpAnnotFile = ''	# annotation bcp file descriptor
 fpNewAlleleRptFile = '' # new allele report file descriptor
 
@@ -109,7 +110,6 @@ mutationTable = 'ALL_Allele_Mutation'
 refTable = 'MGI_Reference_Assoc'
 accTable = 'ACC_Accession'
 noteTable = 'MGI_Note'
-noteChunkTable = 'MGI_NoteChunk'
 annotTable = 'VOC_Annot'
 
 # reference types
@@ -121,7 +121,6 @@ mutationFileName = outputDir + '/' + mutationTable + '.bcp'
 refFileName = outputDir + '/' + refTable + '.bcp'
 accFileName = outputDir + '/' + accTable + '.bcp'
 noteFileName = outputDir + '/' + noteTable + '.bcp'
-noteChunkFileName = outputDir + '/' + noteChunkTable + '.bcp'
 annotFileName = outputDir + '/' + annotTable + '.bcp'
 
 diagFileName = ''	# diagnostic file name
@@ -135,7 +134,6 @@ mgiKey = 0              # ACC_AccessionMax.maxNumericPart
 annotKey = 0		# VOC_Annot._Annot_key
 alleleMutationKey = 0   # ALL_Allele_Mutation._Assoc_key
 
-mgiNoteSeqNum = 1       # MGI_NoteChunk.sequenceNum
 molecularNoteTypeKey = 1021      # MGI_Note._NoteType_key for molecular note
 colonyIdNoteTypeKey = 1041   	 # MGI_Note._NoteType_key for colony id note
 
@@ -185,7 +183,7 @@ def initialize():
 
     global fpDiagFile, fpErrorFile, fpInputFile, errorFileName, diagFileName
     global fpAlleleFile, fpMutationFile, fpRefFile
-    global fpAccFile, fpNoteFile, fpNoteChunkFile, fpAnnotFile
+    global fpAccFile, fpNoteFile, fpAnnotFile
     global fpNewAlleleRptFile
  
     db.useOneConnection(1)
@@ -243,11 +241,6 @@ def initialize():
         exit(1, 'Could not open file %s\n' % noteFileName)
 
     try:
-        fpNoteChunkFile = open(noteChunkFileName, 'w')
-    except:
-        exit(1, 'Could not open file %s\n' % noteChunkFileName)
-
-    try:
         fpAnnotFile = open(annotFileName, 'w')
     except:
         exit(1, 'Could not open file %s\n' % annotFileName)
@@ -276,7 +269,6 @@ def closeFiles():
         fpRefFile.close()
         fpAccFile.close()
         fpNoteFile.close()
-        fpNoteChunkFile.close()
         fpAnnotFile.close()
         fpNewAlleleRptFile.close()
     except:
@@ -304,7 +296,7 @@ def setPrimaryKeys():
     results = db.sql('select max(_Accession_key) + 1 as nextKey from ACC_Accession', 'auto')
     accKey = results[0]['nextKey']
 
-    results = db.sql('select max(_Note_key) + 1 as nextKey from MGI_Note', 'auto')
+    results = db.sql(''' select nextval('mgi_note_seq') as nextKey ''', 'auto')
     noteKey = results[0]['nextKey']
 
     results = db.sql('''select max(maxNumericPart) + 1 as nextKey from ACC_AccessionMax 
@@ -336,12 +328,11 @@ def bcpFiles():
     bcp3 = '%s %s "/" %s %s' % (bcpI, refTable, refFileName, bcpII)
     bcp4 = '%s %s "/" %s %s' % (bcpI, accTable, accFileName, bcpII)
     bcp5 = '%s %s "/" %s %s' % (bcpI, noteTable, noteFileName, bcpII)
-    bcp6 = '%s %s "/" %s %s' % (bcpI, noteChunkTable, noteChunkFileName, bcpII)
-    bcp7 = '%s %s "/" %s %s' % (bcpI, annotTable, annotFileName, bcpII)
+    bcp6 = '%s %s "/" %s %s' % (bcpI, annotTable, annotFileName, bcpII)
 
     db.commit()
 
-    for bcpCmd in [bcp1, bcp2, bcp3, bcp4, bcp5, bcp6, bcp7]:
+    for bcpCmd in [bcp1, bcp2, bcp3, bcp4, bcp5, bcp6]:
         fpDiagFile.write('%s\n' % bcpCmd)
         os.system(bcpCmd)
 
@@ -520,25 +511,19 @@ def processFile():
             % (accKey, alleleID, mgiPrefix, mgiKey, alleleKey, mgiTypeKey, \
                createdByKey, createdByKey, loaddate, loaddate))
 
-        # storing data in MGI_Note/MGI_NoteChunk
+        # storing data in MGI_Note
         # molecular note
 
-        fpNoteFile.write('%s|%s|%s|%s|%s|%s|%s|%s\n' \
-            % (noteKey, alleleKey, mgiTypeKey, molecularNoteTypeKey, \
+        fpNoteFile.write('%s|%s|%s|%s|%s|%s|%s|%s|%s\n' \
+            % (noteKey, alleleKey, mgiTypeKey, molecularNoteTypeKey, description,\
                createdByKey, createdByKey, loaddate, loaddate))
-
-        fpNoteChunkFile.write('%s|%s|%s|%s|%s|%s|%s\n' \
-            % (noteKey, mgiNoteSeqNum, description, createdByKey, createdByKey, loaddate, loaddate))
 
         noteKey = noteKey + 1
 
         # colony ID note
         fpNoteFile.write('%s|%s|%s|%s|%s|%s|%s|%s\n' \
-            % (noteKey, alleleKey, mgiTypeKey, colonyIdNoteTypeKey, \
+            % (noteKey, alleleKey, mgiTypeKey, colonyIdNoteTypeKey, colonyID, \
                createdByKey, createdByKey, loaddate, loaddate))
-
-        fpNoteChunkFile.write('%s|%s|%s|%s|%s|%s|%s\n' \
-            % (noteKey, 1, colonyID, createdByKey, createdByKey, loaddate, loaddate))
 
         noteKey = noteKey + 1
 
