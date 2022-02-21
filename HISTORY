@@ -1,8 +1,8 @@
-TAG: emalload-6-0-??-?
-DATE: 01/11/2022
-STAFF: lec
-CHANGES:  no tag, did not test
-autosequence changes
+TAG: emalload-6-0-18-1
+DATE: 02/21/2022
+STAFF: sc
+CHANGES:  merge wts767
+autosequence changes, note chunk merge
 
 TAG: emalload-6-0-16-3
 TAG: emalload-6-0-16-2
