@@ -103,6 +103,7 @@ alleleCollection = ''
 jNumber = ''
 createdBy = ''
 host = ''
+alleleDescription = '' # gentar project - do not create molecular note
 
 logDiagFile = None
 logCurFile = None
@@ -273,16 +274,16 @@ def initialize():
     transmissionState = os.getenv('TRANSMISSION_STATE')
     alleleCollection = os.getenv('ALLELE_COLLECTION')
     host = os.getenv('HOST')
-
-    impcAlleleTypeList = str.split(os.getenv('IMPC_ALLELETYPES'), ', ')
-    impcSubTypeList = str.split(os.getenv('IMPC_SUBTYPES'), ', ')
-    print('impcAlleleTypeList: %s' % impcAlleleTypeList)
-    print('impcSubTypeList: %s' % impcSubTypeList)
+    
+    impcAlleleTypeList = str.split(os.getenv('IMPC_ALLELETYPES'), '|')
+    impcSubTypeList = str.split(os.getenv('IMPC_SUBTYPES'), '|')
+    #print('impcAlleleTypeList: %s' % impcAlleleTypeList)
+    #print('impcSubTypeList: %s' % impcSubTypeList)
 
     alleleTypeTransString = os.getenv('ALLELE_TYPE_TRANS')
     alleleTypeTransDict = dict(x.split('=') for x in alleleTypeTransString.split('\n'))
-    print('alleleTypeTransString: %s' % alleleTypeTransString)
-    print('alleleTypeTransDict: %s' % alleleTypeTransDict)
+    #print('alleleTypeTransString: %s' % alleleTypeTransString)
+    #print('alleleTypeTransDict: %s' % alleleTypeTransDict)
 
     if openFiles() != 0:
         sys.exit(1)
@@ -382,7 +383,7 @@ def initialize():
     results = db.sql('''select term, abbreviation from VOC_Term
         where _Vocab_key = 71''', 'auto')
     for r in results:
-        labCodeDict[r['abbreviation']] = r['term']
+        labCodeDict[r['abbreviation']] = str.strip(r['term'])
     
     # Query for markers and create lookup
     results = db.sql('''select a.accid, m.symbol, m.name
@@ -577,29 +578,28 @@ def createAlleleFile():
         hasError = 0
         alleleFound = 0
         tokens = list(map(str.strip, line[:-1].split('\t')))
-        print('#### Split input line: %s' % tokens)
+        #print('#### Split input line: %s' % tokens)
         
         # tokens[0] -  marker symbol, not used by the load
         markerID = tokens[1]
-        # tokens[2] - es cell line, not used by load
-        colonyID = tokens[3]
-        strain = str.strip(tokens[4]) # colony background strain
-        # tokens[5] - project name, not used by load
-        # tokens[6] - production center, not used by load
-        alleleClass = tokens[7] # formerly allele type
-        alleleType = tokens[8] # formerly mutation type
-        alleleSubType = tokens[9] 
-        alleleDescription = tokens[10]
-        alleleSuperScript = tokens[11] # was symbol, now just superscript
-        alleleID = tokens[12] # can be blank
-
-        # Translate colony background strain; 3 cases
+        colonyID = tokens[2]
+        strain = str.strip(tokens[3]) # colony background strain
+        alleleClass = tokens[4] 
+        alleleType = tokens[5] 
+        alleleSubType = tokens[6] 
+        alleleSymbol = tokens[7] # full symbol, was just superscript
+        alleleID = tokens[8] # can be blank, if present allele has already been created
+        # Translate colony background strain; 2 cases
         if strain == 'C57BL/6NTac/Den':
             strain = 'C57BL/6NTac'
         elif strain == 'C57BL/6NTac/USA':
             strain = 'C57BL/6NTac'
-        elif strain == 'C57BL6/NCrl':
-            strain = 'C57BL/6NCrl'
+
+        # check if in the database, if not load allele with Not Specified strain
+        # but still report 11/8/22
+        if strain not in strainList:
+            strainNotInMgiList.append('%s%s%s' % (lineNum, TAB, line))
+            strain = 'Not Specified'
 
         # Requirement 7.2A1 Missing or Rejected Values for Required Fields
         missingDataList = []
@@ -608,31 +608,27 @@ def createAlleleFile():
             missingDataList.append('Marker ID')
         if colonyID == '':
             missingDataList.append('Colony ID')
-        if strain == '':
-            missingDataList.append('Strain') 
+        #if strain == '': # 11/8/22  strain now set above
+        #    missingDataList.append('Strain') 
         if alleleClass == '':
             missingDataList.append('Allele Class (type)')
         if alleleType == '':
             missingDataList.append('Allele (mutation) Type')
-        if alleleDescription == '':
-            missingDataList.append('Allele Description')
-        if alleleSuperScript == '':
-            missingDataList.append('Allele Superscript')
+        # empty alleleDescription now means to not create molecular note
+        #if alleleDescription == '': 11/22 not loading molecular note now
+        #    missingDataList.append('Allele Description')
+        if alleleSymbol == '':
+            missingDataList.append('Allele Symbol')
 
         if len(missingDataList):
             missingRequiredValueList.append('%s%s%s%s%s' % (lineNum, TAB, str.join(', ', missingDataList), TAB, line))
-            print('  ### missing fields in input file, skip remaining QC')
+            #print('  ### missing fields in input file, skip remaining QC')
             linesSkippedCt += 1
             continue	# If missing fields skip remainder of QC
 
         # Requirement 7.2A1 col2
         if markerID not in markerDict:  
             markerIdNotInMgiList.append('%s%s%s' % (lineNum, TAB, line))
-            hasError = 1
-
-        # Requirement 7.2A1 col5
-        if strain not in strainList:
-            strainNotInMgiList.append('%s%s%s' % (lineNum, TAB, line))
             hasError = 1
 
          # Requirement 7.2A1 col8
@@ -643,7 +639,6 @@ def createAlleleFile():
             alleleClass = 'Endonuclease-mediated' # not capitalized in the file, cap in DB
 
         # Requirement 7.2A1 col9
-        print('IMPC alleleType: %s subType: %s' % (alleleType, alleleSubType))
         if str.lower(alleleType) not in impcAlleleTypeList:
             unknownAlleleTypeList.append('%s%s%s' % (lineNum, TAB, line))
             hasError = 1
@@ -652,7 +647,7 @@ def createAlleleFile():
             unknownSubTypeList.append('%s%s%s' % (lineNum, TAB, line))
             hasError = 1
         if hasError: # skip to next line if any of the above checks fails
-            print('  ### unexpected data in input file, skip remaining QC')
+            #print('  ### unexpected data in input file, skip remaining QC')
             linesSkippedCt += 1
             continue
 
@@ -661,9 +656,8 @@ def createAlleleFile():
         #
         marker = markerDict[markerID] # we've checked that markerID is in DB above
         markerName, markerSymbol = str.split(marker, '|')
-        #print 'markerName: %s markerSymbol: %s' % (markerName, markerSymbol)
 
-        calcAlleleSymbol = '%s<%s>' % (markerSymbol, alleleSuperScript)
+        calcAlleleSymbol = alleleSymbol # '%s<%s>' % (markerSymbol, alleleSymbol)
 
         # BEGIN ALLELE ID PRESENT IN INPUT
         # Requirement  7.2.C
@@ -672,10 +666,10 @@ def createAlleleFile():
         # 2. if so, is it an approved allele
         # 3. if not, is it another object type
         if alleleID != '': # Allele ID present Flow Diagram Box B
-            print('  #### Allele ID Present: %s' % alleleID)
+            #print('  #### Allele ID Present: %s' % alleleID)
             if alleleID in alleleByIDDict:    # Requirement 7.2.D Allele ID in MGI check
                 dbA = alleleByIDDict[alleleID]
-                print('dbA.asym: %s' % dbA.asym)
+                #print('dbA.asym: %s' % dbA.asym)
                 # if not 'Approved', don't do any other checks.
                 if dbA.ast != 'Approved':    # Requirement 7.2.D3 Allele ID status check
                     alleleIdMatchAlleleStatusDiscrepList.append('%s%s%s%s%s' % \
@@ -684,7 +678,7 @@ def createAlleleFile():
                 else:   
                     # Requirement 7.2.D1 Marker ID check, 2ndary OK
                     if markerID != dbA.mid: # check to see if 2ndary
-                        print('markerID: %s dbID: %s' % (markerID, dbA.mid))
+                        #print('markerID: %s dbID: %s' % (markerID, dbA.mid))
                         results = db.sql('''select accid
                                 from ACC_Accession
                                 where _MGIType_key = 2
@@ -692,7 +686,7 @@ def createAlleleFile():
                                 and _Object_key = %s ''' % dbA.mk, 'auto')
                         isSecondary = 0
                         for r in results:
-                            print('dbAccID: %s' %  r['accid'])
+                            #print('dbAccID: %s' %  r['accid'])
                             if markerID == r['accid']:
                                 isSecondary = 1
                                 break
@@ -701,9 +695,9 @@ def createAlleleFile():
                                 (lineNum, TAB, alleleID, TAB, calcAlleleSymbol, TAB, dbA.mid, TAB, dbA.ms, TAB, line))
                             hasError = 1
                     # Requirement 7.2.D2 Allele symbol check
-                    print('alleleSuperScript: %s' % alleleSuperScript)
-                    print('dbAlleleSymbol: %s' % dbA.asym)
-                    if str.find(dbA.asym, alleleSuperScript) == -1:
+                    #print('alleleSymbol: %s' % alleleSymbol)
+                    #print('dbAlleleSymbol: %s' % dbA.asym)
+                    if str.find(dbA.asym, alleleSymbol) == -1:
                         alleleIdMatchAlleleSSMismatchList.append('%s%s%s%s%s%s%s' % \
                             (lineNum, TAB, dbA.aid, TAB, dbA.asym, TAB, line))
                         hasError = 1
@@ -713,13 +707,13 @@ def createAlleleFile():
                     # if incoming cid not in the set - add it to the db
                     # Additional cids in db is OK as long as input cid in db
                     
-                    print('dbA.cid: %s' % dbA.cid)
+                    #print('dbA.cid: %s' % dbA.cid)
                     dbColonyIDList = []
                     cidError = 0 # assume there's no error
                     if dbA.cid != '':
                         dbColonyIDList.append(str.lower(dbA.cid)) # for lower case compare
-                    print('dbColonyIDList: %s' % dbColonyIDList)
-                    print('IncColonyID: %s' % colonyID)
+                    #print('dbColonyIDList: %s' % dbColonyIDList)
+                    #print('IncColonyID: %s' % colonyID)
 
                     # Requirement 7.2.D4a Allele ID match, Colony ID Mismatch
                     if dbColonyIDList != [] and str.lower(colonyID) not in dbColonyIDList:
@@ -731,7 +725,7 @@ def createAlleleFile():
                     # get the set of allele(s) (0..n) associated with incoming cid
                     # if there are multiple alleles in the set report
                     if str.lower(colonyID) in colonyToAlleleDict:
-                        print('%s in colonyToAlleleDict' % colonyID)
+                        #print('%s in colonyToAlleleDict' % colonyID)
                         allelesByCidList = colonyToAlleleDict[str.lower(colonyID)]
                         if len(allelesByCidList) > 1:
                             for aByCid in allelesByCidList:
@@ -752,7 +746,7 @@ def createAlleleFile():
                             fpNoteload.write('%s%s%s%s' % (alleleID, TAB, colonyID, CRT))
 
             else: # Requirement 7.2.C1 Allele ID not in MGI OR matches different object type
-                print('Allele ID not in MGI OR matches a different object type')
+                #print('Allele ID not in MGI OR matches a different object type')
                 objectType = queryMGIType(alleleID)
                 # report: 
                 # error type: 'MGI Allele Accession present, No MGI Allele Match
@@ -766,7 +760,7 @@ def createAlleleFile():
         else: 
 
             # BEGIN COLONY ID MATCH 7.2.E
-            print('  #### Allele ID not in input, colonyID is: %s' % colonyID)
+            #print('  #### Allele ID not in input, colonyID is: %s' % colonyID)
             if str.lower(colonyID) in colonyToAlleleDict: 
                 alleleList = colonyToAlleleDict[str.lower(colonyID)]
                 # Requirement 7.2.F1 Colony ID Matches Multiple Alleles in MGI
@@ -775,7 +769,7 @@ def createAlleleFile():
                         # report multiple alleles for a colony ID
                         cidMatchToMultiList.append('%s%s%s%s%s%s%s%s' % (lineNum, TAB, dbA.aid, TAB, dbA.asym, TAB, line, CRT))
                         hasError = 1
-                        print('  ###  multiple alleles for colony ID, skip remaining checks')
+                        #print('  ###  multiple alleles for colony ID, skip remaining checks')
                         linesSkippedCt += 1
                         continue # multiple alleles for colony ID, don't do further checks
 
@@ -794,9 +788,9 @@ def createAlleleFile():
                             (lineNum, TAB, dbA.aid, TAB, dbA.asym, TAB, line))
                         hasError = 1
                     # Requirement 7.2.F2 Allele superscript check
-                    print('cid match, alleleSuperScript: %s' % alleleSuperScript)
-                    print('cid match dbAlleleSymbol: %s' % dbA.asym)
-                    if str.find(dbA.asym, alleleSuperScript) == -1:
+                    #print('cid match, alleleSymbol: %s' % alleleSymbol)
+                    #print('cid match dbAlleleSymbol: %s' % dbA.asym)
+                    if str.find(dbA.asym, alleleSymbol) == -1:
                         cidMatchAlleleSSMismatchList.append('%s%s%s%s%s%s%s' % \
                             (lineNum, TAB, dbA.aid, TAB, dbA.asym, TAB, line))
                         hasError = 1
@@ -806,8 +800,7 @@ def createAlleleFile():
                 
             # BEGIN NO COLONY ID MATCH Requirement 7.2.G
             else:
-                print('  #### No allele ID, no cid match, calculate allele symbol and check in DB')
-                print('calcAlleleSymbol: %s' % calcAlleleSymbol)
+                #print('  #### No allele ID, no cid match, calculate allele symbol and check in DB')
 
                 symbolError = 0 # default to no error
 
@@ -821,7 +814,7 @@ def createAlleleFile():
                 # Requirement 7.2.H No CID Match, Allele Symbol Match
                 #elif len(results) == 1:
                 if len(results) == 1:
-                    print('no cid match, but symbol match: %s' % results)
+                    #print('no cid match, but symbol match: %s' % results)
                     status = results[0]['status']
                     aID = results[0]['accid']
                     symbol = results[0]['symbol']
@@ -852,9 +845,9 @@ def createAlleleFile():
                 # Requirement 7.2.H3 check for multiple (duplicate) alleles in the database
                 #else: # len(results) > 1:
                 elif len(results) > 1:
-                    print('no cid match, symbol match to dupe alleles in database: %s' % results)
+                    #print('no cid match, symbol match to dupe alleles in database: %s' % results)
                     for r in results:
-                        print(r)
+                        #print(r)
                         aID = r['accid']
                         symbol = r['symbol']
                         symbolMatchMultiAlleleList.append('%s%s%s%s%s%s%s' % \
@@ -878,7 +871,7 @@ def createAlleleFile():
         # Requirement 7.2.I So, we have a new allele; check the lab code in 
         # the superscript to make sure it is in the Cell Line Lab Code vocab
         labName = ''
-        labCode = findLabCode(alleleSuperScript)
+        labCode = findLabCode(alleleSymbol)
         print('  #### checking lab code: %s' % labCode)
         if labCode not in labCodeDict:
             labCodeNotInMgiList.append('%s%s%s%s%s' % (lineNum, TAB, labCode, TAB, line))
@@ -897,11 +890,11 @@ def createAlleleFile():
             impcKey = '%s|%s' % (str.lower(alleleType), str.lower(alleleSubType))
         if impcKey not in alleleTypeTransDict:
             atTransKeyNotInMgiList.append('%s%s%s%s%s' % (lineNum, TAB, impcKey, TAB, line))
-            print('  #### alleleType/subType combo not in translation')
+            #print('  #### alleleType/subType combo not in translation')
             hasError = 1
         else:
             mgiValue = alleleTypeTransDict[impcKey]
-            print('impcKey: %s mgiValue: %s' % (impcKey, mgiValue))
+            #print('impcKey: %s mgiValue: %s' % (impcKey, mgiValue))
             # The case where there is no subtype
             mgiAlleleType = mgiValue
             mgiSubType = ''
@@ -909,12 +902,12 @@ def createAlleleFile():
             # The case where there is a subtype
             if str.find(mgiValue, '|') != -1:
                 mgiAlleleType, mgiSubType = str.split(mgiValue, '|')
-            print('mgiAlleletype: %s mgiSubType: %s' % ( mgiAlleleType, mgiSubType))
+            #print('mgiAlleletype: %s mgiSubType: %s' % ( mgiAlleleType, mgiSubType))
 
             # both mgiAlleleType and mgiSubType can be multivalued
             alleleTypes = str.split(mgiAlleleType, ';')
             subTypes = str.split(mgiSubType, ';')
-            print('alleleTypes: %s subTypes: %s' % (alleleTypes, subTypes))
+            #print('alleleTypes: %s subTypes: %s' % (alleleTypes, subTypes))
 
                 
         #
@@ -923,10 +916,10 @@ def createAlleleFile():
         if hasError == 1: # error in the lab code
             linesSkippedCt += 1
         else:
-            print('  #### No allele identified in DB and no errors; translate stuff and create allele')
+            #print('  #### No allele identified in DB and no errors; translate stuff and create allele')
             # get the sequencNum from the allele
             seqNumFinder = re.compile ( 'em(.*)\(' )
-            match = seqNumFinder.search(alleleSuperScript)
+            match = seqNumFinder.search(alleleSymbol)
             sequenceNum = match.group(1)
 
             # get the lab name from the lab code
@@ -936,15 +929,15 @@ def createAlleleFile():
             alleleName = alleleNameTemplate % (sequenceNum, labName)
             if calcAlleleSymbol not in calcAlleleDict:
                 calcAlleleDict[calcAlleleSymbol] = []
-
+            
             # the line we want to write to the allele file if no dupes
             alleleLine = '%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s' % (markerID, TAB, markerSymbol, TAB, mgiAlleleType, TAB, alleleDescription, TAB, colonyID, TAB, strain, TAB, calcAlleleSymbol, TAB, alleleName, TAB, inHeritMode, TAB, alleleClass, TAB, mgiSubType, TAB, alleleStatus, TAB, transmissionState, TAB, alleleCollection, TAB, jNumber, TAB, createdBy, CRT)
             calcAlleleDict[calcAlleleSymbol].append([alleleLine, lineNum, line])
 
     for key in calcAlleleDict:
         if len(calcAlleleDict[key]) > 1: # dupe in input
-            print('  ### Dupe alleles in input')
-            print(calcAlleleDict[key])
+            #print('  ### Dupe alleles in input')
+            #print(calcAlleleDict[key])
             for l in calcAlleleDict[key]:
                 dupeAlleleInInputList.append('%s%s%s%s' % (l[1], TAB, l[2], CRT))
         else:
@@ -1028,7 +1021,7 @@ def writeQCReport():
          fpQC.write(str.join(CRT, alleleIdMatchMarkerIdMismatchList))
     fpQC.write('Total: %s' % len(alleleIdMatchMarkerIdMismatchList))
 
-    fpQC.write('%s%s7.2.D2 Allele ID Match, Allele Symbol Superscript Mismatch%s%s' % (CRT, CRT, CRT, CRT))
+    fpQC.write('%s%s7.2.D2 Allele ID Match, Allele Symbol  Mismatch%s%s' % (CRT, CRT, CRT, CRT))
     fpQC.write('Line#%sDB Allele ID%sDB Allele Symbol%sInput Line%s' % (TAB, TAB, TAB, CRT))
     fpQC.write('_____________________________________________________________%s' % CRT)
     if len(alleleIdMatchAlleleSSMismatchList):
@@ -1070,7 +1063,7 @@ def writeQCReport():
          fpQC.write(str.join(CRT, cidMatchMarkerIdMismatchList))
     fpQC.write('Total: %s' % len(cidMatchMarkerIdMismatchList))
 
-    fpQC.write('%s%s7.2.F2b Colony ID Match, Allele Symbol Superscript Mismatch%s%s' % (CRT, CRT, CRT, CRT))
+    fpQC.write('%s%s7.2.F2b Colony ID Match, Allele Symbol Mismatch%s%s' % (CRT, CRT, CRT, CRT))
     fpQC.write('Line#%sDB Allele ID%sDB Allele Symbol%sInput Line%s' % (TAB, TAB, TAB, CRT))
     fpQC.write('_____________________________________________________________%s' % CRT)
     if len(cidMatchAlleleSSMismatchList):

@@ -1,3 +1,20 @@
+TAG: emalload-6-0-22-1
+DATE: 02/21/2022
+STAFF: sc
+CHANGES: https://mgi-jira.atlassian.net/browse/FL2-4
+switching to the GenTar input file
+1) impc.config.default - updated NUM_COLUMNS
+2) impc.config.default - updated input file paths, allele types, sub types,
+    allele type translation, 
+3) bin/makeIMPC.py - new delimiter for types/subtype (|), 
+   a) strip the labcodes from the database (note)
+   b)  update parsing for new file format
+   c)  allele superscript is now full allele symbol - template no longer needed
+   d)  load allele with Not Specified strain if strain not in database
+   e)  if allele description is empty - don't create molecular not - this is 
+       temporary until Anna/Cindy figure out how to template molecular notes
+4) bin/makeAllele.py - if description is empty, don't create molecular note
+
 TAG: emalload-6-0-18-2
 TAG: emalload-6-0-18-1
 DATE: 02/21/2022

@@ -517,14 +517,15 @@ def processFile():
         # storing data in MGI_Note
         # molecular note
 
-        fpNoteFile.write('%s|%s|%s|%s|%s|%s|%s|%s|%s\n' \
-            % (noteKey, alleleKey, mgiTypeKey, molecularNoteTypeKey, description,\
-               createdByKey, createdByKey, loaddate, loaddate))
+        if description != '':
+            fpNoteFile.write('%s|%s|%s|%s|%s|%s|%s|%s|%s\n' \
+                % (noteKey, alleleKey, mgiTypeKey, molecularNoteTypeKey, description,\
+                   createdByKey, createdByKey, loaddate, loaddate))
 
-        noteKey = noteKey + 1
+            noteKey = noteKey + 1
 
         # colony ID note
-        fpNoteFile.write('%s|%s|%s|%s|%s|%s|%s|%s\n' \
+        fpNoteFile.write('%s|%s|%s|%s|%s|%s|%s|%s|%s\n' \
             % (noteKey, alleleKey, mgiTypeKey, colonyIdNoteTypeKey, colonyID, \
                createdByKey, createdByKey, loaddate, loaddate))
 

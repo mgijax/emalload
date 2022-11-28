@@ -40,8 +40,8 @@ INPUTDIR=${FILEDIR}/input
 export FILEDIR ARCHIVEDIR LOGDIR RPTDIR OUTPUTDIR INPUTDIR 
 
 # input/output
-SOURCE_INPUT_FILE=${DATADOWNLOADS}/www.mousephenotype.org/mgi_crispr_allele_report.tsv
-SOURCE_COPY_INPUT_FILE=${INPUTDIR}/crispr_file.txt
+SOURCE_INPUT_FILE=${DATADOWNLOADS}/www.gentar.org/mgi_crispr_current
+SOURCE_COPY_INPUT_FILE=${INPUTDIR}/gentar_crispr_file.txt
 
 ALLELE_FILE=${OUTPUTDIR}/allele_file.txt
 CID_NOTE_FILE=${OUTPUTDIR}/cid_noteload.txt
@@ -50,6 +50,11 @@ NEW_ALLELE_RPT=${RPTDIR}/MGI_impc_crispr_allele.rpt
 
 export SOURCE_INPUT_FILE SOURCE_COPY_INPUT_FILE ALLELE_FILE CID_NOTE_FILE QC_FILE
 export NEW_ALLELE_RPT
+
+# do we want to load molecular notes?
+LOAD_MOL_NOTE=false
+
+export LOAD_MOL_NOTE
 
 # the preprocessor to use 
 PREPROCESSOR=makeIMPC.py
@@ -87,43 +92,31 @@ export JNUMBER INHERIT_MODE ALLELE_SUBTYPE ALLELE_STATUS
 export TRANSMISSION_STATE ALLELE_COLLECTION
 
 # Case lowered list of expected IMPC allele types (mutation type)
-IMPC_ALLELETYPES='deletion, hdr, hr, indel'
+IMPC_ALLELETYPES='deletion|insertion|point mutation'
 
 # Case lowered list of expected IMPC allele subtypes
-IMPC_SUBTYPES='exon deletion, indel, inter-exdel deletion, intra-exdel deletion, whole-gene deletion, conditional ready, point mutation, null reporter'
+IMPC_SUBTYPES='deletion|exon deletion|indel|insertion, intragenic deletion|inter-exon deletion|intra-exon deletion|whole-gene deletion|insertion|point mutation'
 
 export IMPC_ALLELETYPES IMPC_SUBTYPES
 
 # Allele type/subtype translation
 # '|' delim alleleType|subType
 # when > 1 alleletype or subType ';' delim
-ALLELE_TYPE_TRANS='deletion=Intragenic deletion|Null/knockout
+ALLELE_TYPE_TRANS='deletion|deletion=Intragenic deletion|Null/knockout
 deletion|exon deletion=Intragenic deletion|Null/knockout
 deletion|indel=Intragenic deletion;Insertion|Null/knockout
-deletion|inter-exdel deletion=Intragenic deletion|Not Specified
-deletion|intra-exdel deletion=Intragenic deletion|Null/knockout
+deletion|insertion, intragenic deletion=Intragenic deletion;Insertion|Null/knockout
+deletion|inter-exon deletion=Intragenic deletion|Null/knockout
+deletion|intra-exon deletion=Intragenic deletion|Null/knockout
 deletion|whole-gene deletion=Deletion|Null/knockout
-hdr=Intragenic deletion|Null/knockout
-hdr|conditional ready=Intragenic deletion|Null/knockout;Conditional ready
-hdr|exon deletion=Intragenic deletion|Null/knockout
-hdr|indel=Intragenic deletion;Insertion|Null/knockout
-hdr|point mutation=Single point mutation
-hr=Intragenic deletion|Null/knockout
-hr|conditional ready=Intragenic deletion|Null/knockout;Conditional ready
-hr|exon deletion=Intragenic deletion|Null/knockout
-hr|indel=Intragenic deletion;Insertion|Null/knockout
-hr|intra-exdel deletion=Intragenic deletion|Null/knockout
-hr|null reporter=Intragenic deletion;Insertion|Null/knockout;Reporter
-indel=Intragenic deletion;Insertion|Null/knockout
-indel|exon deletion=Intragenic deletion;Insertion|Null/knockout
-indel|indel=Intragenic deletion;Insertion|Null/knockout
-indel|inter-exdel deletion=Intragenic deletion;Insertion|Null/knockout'
+insertion|insertion=Insertion
+point mutation|point mutation=Single point mutation'
 
 export ALLELE_TYPE_TRANS
 
 # For sanity checks
 SANITY_RPT=${RPTDIR}/sanity.rpt
-NUM_COLUMNS=10  # ?? for real file
+NUM_COLUMNS=9  # ?? for real file
 FILE_MIN_SIZE=10 # 800 for real file
 
 export SANITY_RPT NUM_COLUMNS FILE_MIN_SIZE

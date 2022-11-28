@@ -52,6 +52,8 @@ CONFIG=$1
 
 .  ${CONFIG}
 
+echo "LOG_DIAG: ${LOG_DIAG}"
+echo "LOG_CUR: ${LOG_CUR}"
 #
 # Make sure the configuration file exists and source it.
 #
