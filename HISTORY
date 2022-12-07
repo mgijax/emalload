@@ -1,3 +1,9 @@
+TAG: emalload-6-0-22-3
+DATE: 02/21/2022
+STAFF: sc
+CHANGES: https://mgi-jira.atlassian.net/browse/FL2-4
+added some nomen checking to avoid creating some bad allele symbols
+
 TAG: emalload-6-0-22-2
 TAG: emalload-6-0-22-1
 DATE: 02/21/2022
