@@ -22,21 +22,17 @@
 #
 #  Inputs:
 #
-#      IMPC file ($SOURCE_COPY_INPUT_FILE)
-#
-#       field 1: Marker Symbol (not used by load)
-#       field 2: MGI Marker ID
-#       field 3: ES Cell Line (not used by load)
-#       field 4: Colony ID
-#       field 5: Colony Background Strain
-#       field 5: Project Name (not used by load)
-#       field 6: Production Center (not used by load)
-#       field 7: Allele Class (aka allele type)
-#       field 8: Allele Type (aka mutation type)
-#       field 9: Allele Subtype
-#       field 10: Allele Description
-#       field 11: Allele Name (aka allele superscript)
-#       field 12: MGI Allele ID (can be blank)
+#      IMPC file ($SOURCE_COPY_INPUT_FILE) - the latest 9 col version from GenTar
+#           text is from the column header       
+#       field 1: Gene Symbol
+#       field 2: Gene MGI Accession ID
+#       field 3: Colony Name
+#       field 4: Colony Background Strain
+#       field 5: Mutation Class
+#       field 6: Mutation Type
+#       field 7: Mutation Subtype
+#       field 8: Mutation Symbol
+#       field 9: Mutation MGI Accession ID
 
 #  Outputs: 
 #
@@ -158,6 +154,13 @@ alleleByIDDict = {}
 # labCode is vocab abbreviation, laabName is term
 labCodeDict = {}
 
+# regex to find labcode in symbol
+labCodeFinder = re.compile ('\)(\w+)')
+
+# regex to check for multiple < or > in symbol
+pattern1 = r'<'
+pattern2 = r'>'
+
 # marker ID to marker name lookup (for Allele Name construction)
 # {markerID: markerName|symbol, ...}
 markerDict = {}
@@ -197,6 +200,7 @@ calcAlleleDict = {}
 #
 missingRequiredValueList = []	
 labCodeNotInMgiList = []	
+badNomenList = []
 markerIdNotInMgiList = []	
 strainNotInMgiList = []		
 unknownAlleleClassList = []     
@@ -517,16 +521,16 @@ def queryMGIType(id): # An MGI Accession ID
             typeList.append(r['tableName'])
         return str.join(', ', typeList)
 
-def findLabCode(alleleSS): # and IMPC allele subscript
+def findLabCode(allele): # an IMPC allele symbol
     # Purpose: Finds the labcode in an allele subscript
-    # Returns: '' if no labCode found in "alleleSS; else the labCode
+    # Returns: '' if no labCode found in "allele; else the labCode
     # Assumes: Nothing
     # Effects: Nothing
     # Throws: Nothing
-
+    # match ')' literally then get group where token(s) in 
+    # [a-zA-Z0-9_] (\w) and at least one token (+)
     labCode = ''
-    labCodeFinder = re.compile ('\)(\w*)')
-    match = labCodeFinder.search(alleleSS)
+    match = labCodeFinder.search(allele)
     if match:
         labCode = match.group(1)
     return labCode
@@ -559,7 +563,7 @@ def createAlleleFile():
 
     global missingRequiredValueList, cidMatchToMultiList
     global cidMatchMarkerIdMismatchList, cidMatchAlleleStatusDiscrepList
-    global cidMatchAlleleSSMismatchList
+    global cidMatchAlleleSSMismatchList, badNomenList
     global labCodeNotInMgiList, markerIdNotInMgiList, alleleIdNotInMGIList
     global strainNotInMgiList, unknownAlleleClassList, unknownAlleleTypeList
     global unknonhwnSubTypeList, alleleIdMatchAlleleStatusDiscrepList
@@ -787,7 +791,7 @@ def createAlleleFile():
                         cidMatchMarkerIdMismatchList.append( '%s%s%s%s%s%s%s' % \
                             (lineNum, TAB, dbA.aid, TAB, dbA.asym, TAB, line))
                         hasError = 1
-                    # Requirement 7.2.F2 Allele superscript check
+                    # Requirement 7.2.F2 Allele symbol check
                     #print('cid match, alleleSymbol: %s' % alleleSymbol)
                     #print('cid match dbAlleleSymbol: %s' % dbA.asym)
                     if str.find(dbA.asym, alleleSymbol) == -1:
@@ -869,13 +873,19 @@ def createAlleleFile():
             continue  
 
         # Requirement 7.2.I So, we have a new allele; check the lab code in 
-        # the superscript to make sure it is in the Cell Line Lab Code vocab
+        # the symbol to make sure it is in the Cell Line Lab Code vocab
         labName = ''
+        #print('  #### checking allele nomenclature')
+        if len(re.findall(pattern1, alleleSymbol)) > 1 or len(re.findall(pattern2, alleleSymbol)) > 1:
+            #print('  #### bad allele nomen, not creating allele')
+            badNomenList.append('%s%s%s%s%s' % (lineNum, TAB, alleleSymbol, TAB, line))
+            hasError = 1
+        #print('  #### checking lab code')
         labCode = findLabCode(alleleSymbol)
-        print('  #### checking lab code: %s' % labCode)
+
         if labCode not in labCodeDict:
             labCodeNotInMgiList.append('%s%s%s%s%s' % (lineNum, TAB, labCode, TAB, line))
-            print('  #### bad lab code, not createing allele')
+            #print('  #### bad lab code, not creating allele')
             hasError = 1
 
         # translate allele type. The key is the pipe-delim IMPC alleleType
@@ -1098,9 +1108,17 @@ def writeQCReport():
          fpQC.write(str.join(CRT, symbolMatchMultiAlleleList))
     fpQC.write('Total: %s' % len(symbolMatchMultiAlleleList))
 
+    fpQC.write('%s%sNew check: Allele Symbol has incorrect nomenclature%s%s' % (CRT, CRT, CRT, CRT))
+    fpQC.write('Line#%sAllele Symbol%sInput Line%s' % (TAB, TAB, CRT))
+    fpQC.write('_____________________________________________________________%s' % CRT)
+    if len(badNomenList):
+        fpQC.write(str.join(CRT, badNomenList))
+    fpQC.write('Total: %s' % len(badNomenList))
+
     fpQC.write('%s%s7.2.I No Allele Match, Lab Code not Present%s%s' % (CRT, CRT, CRT, CRT))
     fpQC.write('Line#%sLab Code%sInput Line%s' % (TAB, TAB, CRT))
     fpQC.write('_____________________________________________________________%s' % CRT)
+
     if len(labCodeNotInMgiList):
         fpQC.write(str.join(CRT, labCodeNotInMgiList))
     fpQC.write('Total: %s' % len(labCodeNotInMgiList))
