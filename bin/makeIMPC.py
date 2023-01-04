@@ -928,7 +928,7 @@ def createAlleleFile():
         else:
             #print('  #### No allele identified in DB and no errors; translate stuff and create allele')
             # get the sequencNum from the allele
-            seqNumFinder = re.compile ( 'em(.*)\(' )
+            seqNumFinder = re.compile ( '<em(.*)\(' )
             match = seqNumFinder.search(alleleSymbol)
             sequenceNum = match.group(1)
 
